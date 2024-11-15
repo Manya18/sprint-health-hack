@@ -20,3 +20,21 @@ body,
   margin: 0;
   padding: 0;
 }
+
+button{
+  border: none;
+  font-size: 14px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.primary-button{
+  border: none;
+  background-color: #4E47D3;
+  color: #FFFFFF;
+  transition: 0.2s;
+  &:hover{
+    background-color: #332cbf;
+  }
+}

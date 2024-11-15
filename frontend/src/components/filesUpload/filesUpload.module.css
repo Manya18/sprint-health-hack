@@ -5,6 +5,7 @@
     display: flex;
     justify-content: space-between;
     border-radius: 10px;
+    margin-bottom: 20px;
 }
 .inputWrapper{
     display: flex;
@@ -13,7 +14,4 @@
 }
 .label{
     font-size: 16px;
-}
-.input{
-
 }
