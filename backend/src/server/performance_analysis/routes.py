@@ -1,9 +1,11 @@
 from fastapi import HTTPException, UploadFile, File
 from .schemas import PerformanceTaskParams, TaskStatus
 from ml.models import RANDOM_FOREST_MODEL
+from ..config import SERVER_DIR_PATH
 from . import performance_router
 from io import BytesIO
 import pandas as pd
+import os
 
 
 @performance_router.post('/performance_prediction')
@@ -75,4 +77,17 @@ def upload_sprint_file(file: UploadFile = File(...)):
     buffer.close()
     file.file.close()
     return {'message': 'Файл успешно загружен'}
+
+
+@performance_router.get('/sprint/{sprint_name}')
+def get_all_task_by_sprint_id(sprint_name: str):
+    sprints = pd.read_csv(os.path.join(SERVER_DIR_PATH, 'file', f"sprints.csv"), skiprows=1, sep=';')
+    data = pd.read_csv(os.path.join(SERVER_DIR_PATH, 'file', f"data.csv"), skiprows=1, sep=';')
+
+    res = data[data['entity_id'].isin(
+        list(map(int, sprints.loc[sprints['sprint_name'] == sprint_name, 'entity_ids'].iloc[0].strip('{}').split(',')))
+    )]
+    res = res.fillna('')
+
+    return res.to_dict()
 
