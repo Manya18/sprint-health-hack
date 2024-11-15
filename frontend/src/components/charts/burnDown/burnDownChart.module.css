@@ -1,0 +1,7 @@
+.title {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 5px 7px 15px;
+  display: flex;
+  align-items: center;
+}
