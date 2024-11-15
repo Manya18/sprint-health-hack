@@ -1,7 +1,8 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile, File
 from .schemas import PerformanceTaskParams, TaskStatus
 from ml.models import RANDOM_FOREST_MODEL
 from . import performance_router
+from io import BytesIO
 import pandas as pd
 
 
@@ -22,25 +23,56 @@ def predict_performance(task_params: PerformanceTaskParams) -> list[TaskStatus]:
     return RANDOM_FOREST_MODEL.predict(df[['actual_time_minutes', 'estimated_time_minutes', 'depends_on']])
 
 
-# @performance_router.post('/upload')
-# def upload_file(file: UploadFile = File(...)):
-#     """
-#     Загрузка файла на сервер
-#     :param file: файл
-#     :return: статус загрузки
-#     """
-#     contents = file.file.read()
-#     buffer = BytesIO(contents)
-#
-#     df = pd.read_csv(buffer, sep=',')
-#     df = df[df['Имя спринта'].notna()]
-#
-#     logging.info(df.info())
-#     df.to_csv(
-#         os.path.join(SERVER_DIR_PATH, 'file', f"uploaded_file_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.csv"),
-#         index=False
-#     )
-#
-#     buffer.close()
-#     file.file.close()
-#     return {'message': 'Файл успешно загружен'}
+@performance_router.post('/upload_data_file')
+def upload_data_file(file: UploadFile = File(...)):
+    """
+    Загрузка файла данных на сервер
+    :param file: файл
+    :return: статус загрузки
+    """
+    contents = file.file.read()
+    buffer = BytesIO(contents)
+
+    df = pd.read_csv(buffer, sep=';', skiprows=1)
+    print(df.head())
+
+    buffer.close()
+    file.file.close()
+    return {'message': 'Файл успешно загружен'}
+
+
+@performance_router.post('/upload_history_file')
+def upload_history_file(file: UploadFile = File(...)):
+    """
+    Загрузка файла данных на сервер
+    :param file: файл
+    :return: статус загрузки
+    """
+    contents = file.file.read()
+    buffer = BytesIO(contents)
+
+    df = pd.read_csv(buffer, sep=';', skiprows=1)
+    print(df.head())
+
+    buffer.close()
+    file.file.close()
+    return {'message': 'Файл успешно загружен'}
+
+
+@performance_router.post('/upload_sprint_file')
+def upload_sprint_file(file: UploadFile = File(...)):
+    """
+    Загрузка файла данных на сервер
+    :param file: файл
+    :return: статус загрузки
+    """
+    contents = file.file.read()
+    buffer = BytesIO(contents)
+
+    df = pd.read_csv(buffer, sep=';', skiprows=1)
+    print(df.head())
+
+    buffer.close()
+    file.file.close()
+    return {'message': 'Файл успешно загружен'}
+
