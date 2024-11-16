@@ -3,7 +3,9 @@ from .schemas import PerformanceTaskParams, TaskStatus
 from ml.models import RANDOM_FOREST_MODEL
 from ..config import SERVER_DIR_PATH
 from . import performance_router
+from sqlalchemy import text
 from io import BytesIO
+from db import engine
 import pandas as pd
 import os
 
@@ -36,11 +38,16 @@ def upload_data_file(file: UploadFile = File(...)):
     buffer = BytesIO(contents)
 
     df = pd.read_csv(buffer, sep=';', skiprows=1)
-    print(df.head())
+    table_name = 'task'
+
+    with engine.connect() as connection:
+        connection.execute(text(f"DELETE FROM {table_name};"))
+
+    df.to_sql(table_name, engine, if_exists='replace', index=False)
 
     buffer.close()
     file.file.close()
-    return {'message': 'Файл успешно загружен'}
+    return {'message': 'Файл успешно загружен в базу данных'}
 
 
 @performance_router.post('/upload_history_file')
@@ -90,4 +97,3 @@ def get_all_task_by_sprint_id(sprint_name: str):
     res = res.fillna('')
 
     return res.to_dict()
-

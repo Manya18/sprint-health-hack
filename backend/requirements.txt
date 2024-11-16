@@ -4,3 +4,6 @@ pandas
 uvicorn
 scikit-learn
 asyncpg
+sqlalchemy
+psycopg2-binary
+python-dotenv
