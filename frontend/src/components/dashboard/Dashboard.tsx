@@ -16,7 +16,6 @@ import BurnDownChart from '../charts/burnDown/BurnDownChart';
 import { BurnDownChartType, KeyIndicatorsType, SprintHealthChartType } from '../../types/chartsTypes';
 import KeyIndicators from '../charts/keyIndicators/KeyIndicators';
 
-
 ChartJS.register(...registerables);
 
 interface ChartData {
