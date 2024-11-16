@@ -1,15 +1,18 @@
+from .schemas import PerformanceTaskParams, TaskStatus, TaskFilteredParams
 from sqlalchemy import Integer, String, Float, DateTime, Date
 from fastapi import HTTPException, UploadFile, File
-from .schemas import PerformanceTaskParams, TaskStatus
+from sqlalchemy.dialects.postgresql import ARRAY
 from ml.models import RANDOM_FOREST_MODEL
+from db.crud import get_tasks_records_with_filter
 from ..config import SERVER_DIR_PATH
 from . import performance_router
 from sqlalchemy import text
 from io import BytesIO
 from db import engine
 import pandas as pd
+import logging
 import os
-from sqlalchemy.dialects.postgresql import ARRAY
+
 
 @performance_router.post('/performance_prediction')
 def predict_performance(task_params: PerformanceTaskParams) -> list[TaskStatus]:
@@ -35,15 +38,14 @@ def upload_data_file(file: UploadFile = File(...)):
     :param file: файл
     :return: статус загрузки
     """
+    table_name = 'task'
     contents = file.file.read()
     buffer = BytesIO(contents)
 
     df = pd.read_csv(buffer, sep=';', skiprows=1)
+    df = df.reset_index()
+    df = df.rename(columns={"index": "id"})
     df['due_date'] = pd.to_datetime(df['due_date'])
-    table_name = 'task'
-
-    with engine.connect() as connection:
-        connection.execute(text(f"DELETE FROM {table_name};"))
 
     dtype = {
         'entity_id': Integer,
@@ -83,6 +85,7 @@ def upload_history_file(file: UploadFile = File(...)):
     :param file: файл
     :return: статус загрузки
     """
+    table_name = 'history'
     contents = file.file.read()
     buffer = BytesIO(contents)
 
@@ -92,11 +95,9 @@ def upload_history_file(file: UploadFile = File(...)):
     df = df.drop(columns=['Столбец1'], errors='ignore')
     df = df.dropna()
 
+    df = df.reset_index()
+    df = df.rename(columns={"index": "id"})
     df['history_date'] = pd.to_datetime(df['history_date'])
-    table_name = 'history'
-
-    with engine.connect() as connection:
-        connection.execute(text(f"DELETE FROM {table_name};"))
 
     dtype = {
         'entity_id': Integer,
@@ -121,15 +122,14 @@ def upload_sprint_file(file: UploadFile = File(...)):
     :param file: файл
     :return: статус загрузки
     """
+    table_name = 'sprint'
     contents = file.file.read()
     buffer = BytesIO(contents)
 
     df = pd.read_csv(buffer, sep=';', skiprows=1)
     df['entity_ids'] = df['entity_ids'].apply(lambda x: list(map(int, x.strip('{}').split(','))))
-    table_name = 'sprint'
-
-    with engine.connect() as connection:
-        connection.execute(text(f"DELETE FROM {table_name};"))
+    df = df.reset_index()
+    df = df.rename(columns={"index": "id"})
 
     dtype = {
         'sprint_name': String,
@@ -146,9 +146,8 @@ def upload_sprint_file(file: UploadFile = File(...)):
     return {'message': 'Файл успешно загружен в базу данных'}
 
 
-
 @performance_router.get('/sprint/{sprint_name}')
-def get_all_task_by_sprint_id(sprint_name: str):
+def get_all_tasks_by_sprint_name(sprint_name: str):
     sprints = pd.read_csv(os.path.join(SERVER_DIR_PATH, 'file', f"sprints.csv"), skiprows=1, sep=';')
     data = pd.read_csv(os.path.join(SERVER_DIR_PATH, 'file', f"data.csv"), skiprows=1, sep=';')
 
@@ -158,3 +157,15 @@ def get_all_task_by_sprint_id(sprint_name: str):
     res = res.fillna('')
 
     return res.to_dict()
+
+
+@performance_router.post('/sprint/filtered/{sprint_name}')
+def get_filtered_tasks_by_sprint_name(sprint_name: str, filter_params: TaskFilteredParams):
+    filter_params = filter_params.model_dump()
+    filter_params['sprint_name'] = sprint_name
+    try:
+        data = get_tasks_records_with_filter(**filter_params)
+    except Exception as err:
+        logging.error(err)
+        return {'err': 'Ошибка при получении спринта'}
+    return data

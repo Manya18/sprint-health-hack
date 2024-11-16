@@ -1,5 +1,5 @@
 from . import Base
-from sqlalchemy import  Table, Integer, String, Column, DateTime, ARRAY, Date
+from sqlalchemy import Integer, String, Column, DateTime, ARRAY, Date, Float
 
 
 class Sprint(Base):
@@ -10,6 +10,7 @@ class Sprint(Base):
     sprint_start_date = Column(DateTime)
     sprint_end_date = Column(DateTime)
     entity_ids = Column(ARRAY(Integer))
+
 
 class Task(Base):
     __tablename__ = 'task'
@@ -35,6 +36,7 @@ class Task(Base):
     spent = Column(Float)
     workgroup = Column(String)
     resolution = Column(String)
+
 
 class History(Base):
     __tablename__ = 'history'
