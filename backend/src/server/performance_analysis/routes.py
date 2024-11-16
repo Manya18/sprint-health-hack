@@ -1,7 +1,7 @@
 from db.crud import (
     get_tasks_records_with_filter, delete_all_rows_from_task_table,
     delete_all_rows_from_history_table, delete_all_rows_from_sprint_table,
-    get_all_tasks_by_sprint_name
+    get_all_tasks_by_sprint_name, delete_all_rows_from_task_duplicate_table
 )
 from .schemas import PerformanceTaskParams, TaskStatus, TaskFilteredParams
 from sqlalchemy import Integer, String, Float, DateTime, Date
@@ -49,6 +49,7 @@ def upload_data_file(file: UploadFile = File(...)):
     df = df.reset_index()
     df = df.rename(columns={"index": "id"})
     df['due_date'] = pd.to_datetime(df['due_date'])
+    df_copy = df.copy()
 
     dtype = {
         'entity_id': Integer,
@@ -76,6 +77,8 @@ def upload_data_file(file: UploadFile = File(...)):
 
     delete_all_rows_from_task_table()
     df.to_sql(table_name, engine, if_exists='replace', index=False, dtype=dtype)
+    df_copy.to_sql('task_duplicate', engine, if_exists='replace', index=False, dtype=dtype)
+    delete_all_rows_from_task_duplicate_table()
 
     buffer.close()
     file.file.close()

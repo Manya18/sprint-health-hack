@@ -1,5 +1,5 @@
 from datetime import datetime, date
-from .models import Sprint, Task, History
+from .models import Sprint, Task, History, Task_duplicate
 from . import Session
 import pandas as pd
 
@@ -54,6 +54,10 @@ def delete_all_rows_from_task_table():
         session.query(Task).delete()
         session.commit()
 
+def delete_all_rows_from_task_duplicate_table():
+    with Session() as session:
+        session.query(Task_duplicate).delete()
+        session.commit()
 
 def delete_all_rows_from_history_table():
     with Session() as session:
