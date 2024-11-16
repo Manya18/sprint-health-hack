@@ -1,0 +1,23 @@
+.keyIndicators{
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+.indicator{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    gap: 5px;
+    background-color: #9f9be8;
+    color: #332cbf;
+    padding: 10px;
+    border-radius: 4px;
+    min-width: 100px;
+}
+.label{
+    font-size: 14px;
+}
+.count{
+    font-size: 30px;
+}

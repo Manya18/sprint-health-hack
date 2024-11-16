@@ -1,8 +1,8 @@
 import React from "react";
 import styles from './sprintHealthChart.module.css';
-import { SprintHealthChartData } from "../../../types/charts";
+import { SprintHealthChartType } from "../../../types/chartsTypes";
 
-const SprintHealthChart = ({ data, sprintName }: { data: SprintHealthChartData, sprintName: string }) => {
+const SprintHealthChart = ({ data, sprintName }: { data: SprintHealthChartType, sprintName: string }) => {
   const total = data.toDo + data.inProgress + data.done + data.removed;
 
   const toDoWidth = (data.toDo / total) * 100;

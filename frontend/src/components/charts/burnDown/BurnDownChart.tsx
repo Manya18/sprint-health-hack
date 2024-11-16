@@ -2,12 +2,12 @@ import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement, TimeScale } from 'chart.js';
 import { useEffect, useRef, useState } from 'react';
 import styles from './burnDownChart.module.css';
-import { BurnDownChartData } from '../../../types/charts';
+import { BurnDownChartType } from '../../../types/chartsTypes';
 
 ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement, TimeScale);
 
 
-const BurnDownChart = ({ data, sprintName }: { data: BurnDownChartData, sprintName: string }) => {
+const BurnDownChart = ({ data, sprintName }: { data: BurnDownChartType, sprintName: string }) => {
     const [chartData, setChartData] = useState<any>(null);
     const chartRef = useRef(null);
 

@@ -13,7 +13,8 @@ import { v4 as uuidv4 } from 'uuid';
 import SprintHealthChart from '../charts/sprintHealth/SprintHealthChart';
 import './DashboardChartStyles.css';
 import BurnDownChart from '../charts/burnDown/BurnDownChart';
-import { BurnDownChartData, SprintHealthChartData } from '../../types/charts';
+import { BurnDownChartType, KeyIndicatorsType, SprintHealthChartType } from '../../types/chartsTypes';
+import KeyIndicators from '../charts/keyIndicators/KeyIndicators';
 
 
 ChartJS.register(...registerables);
@@ -21,7 +22,7 @@ ChartJS.register(...registerables);
 interface ChartData {
     id: string;
     type: string;
-    data: SprintHealthChartData | BurnDownChartData;
+    data: SprintHealthChartType | BurnDownChartType | KeyIndicatorsType[];
     name: string;
     xAxisTitle: string;
     yAxisTitle: string;
@@ -60,17 +61,39 @@ const Dashboard: React.FC = () => {
             title: '',
             gridPosition: { x: 15, y: 20, w: 6, h: 8 },
         },
+        {
+            id: "3",
+            type: 'keyIndicators',
+            data: [
+                {label: "К выполнению", count: 35},
+                {label: "В работе", count: 35},
+                {label: "Сделано", count: 35},
+                {label: "Снято", count: 35},
+                {label: "Бэклог изменен с начала спринта на", count: 35},
+            ],
+            name: 'Диаграмма сгорания',
+            xAxisTitle: '',
+            yAxisTitle: '',
+            title: '',
+            gridPosition: { x: 15, y: 20, w: 8, h: 4 },
+        },
     ]);
 
     const renderChart = (chart: ChartData) => {
         switch (chart.type) {
             case 'sprintHealth':
-                const SprintHealthData = chart.data as SprintHealthChartData;
+                const SprintHealthData = chart.data as SprintHealthChartType;
                 return <SprintHealthChart data={SprintHealthData} sprintName="Спринт 1" />;
             case 'burnDown':
-                const burnDownData = chart.data as BurnDownChartData;
+                const burnDownData = chart.data as BurnDownChartType;
                 return <BurnDownChart
                     data={burnDownData}
+                    sprintName="Спринт 1"
+                />;
+            case 'keyIndicators':
+                const keyIndicates = chart.data as KeyIndicatorsType[];
+                return <KeyIndicators
+                    data={keyIndicates}
                     sprintName="Спринт 1"
                 />;
             default:
