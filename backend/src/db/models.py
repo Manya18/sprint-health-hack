@@ -36,6 +36,30 @@ class Task(Base):
     workgroup = Column(String)
     resolution = Column(String)
 
+class Task_duplicate(Base):
+    __tablename__ = 'task_duplicate'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    entity_id = Column(Integer, unique=True)
+    area = Column(String)
+    type = Column(String)
+    status = Column(String)
+    state = Column(String)
+    priority = Column(String)
+    ticket_number = Column(String)
+    name = Column(String)
+    create_date = Column(DateTime)
+    created_by = Column(String)
+    update_date = Column(DateTime)
+    updated_by = Column(String)
+    parent_ticket_id = Column(Integer)
+    assignee = Column(String)
+    owner = Column(String)
+    due_date = Column(Date)
+    rank = Column(String)
+    estimation = Column(Float)
+    spent = Column(Float)
+    workgroup = Column(String)
+    resolution = Column(String)
 
 class History(Base):
     __tablename__ = 'history'
