@@ -13,7 +13,8 @@ from . import digital_values_router
 
 @digital_values_router.get('/get_to_do_tasks')
 def get_to_do_tasks(
-    sprint_names: list[str] = Query(...)
+    sprint_names: list[str] = Query(...),
+    areas: list[str] = Query([])
 ):
     result = []
     sprint_names_str = ', '.join(f"'{name}'" for name in sprint_names)
@@ -23,16 +24,21 @@ def get_to_do_tasks(
     WHERE sprint_name IN ({sprint_names_str})
     """)
 
+    areas_condition = ""
+    if areas:
+        areas_str = ', '.join(f"'{area}'" for area in areas)
+        areas_condition = f"AND area IN ({areas_str})"
+
     with engine.connect() as connection:
         entity_ids = connection.execute(query).scalar()
 
     for item in entity_ids:
         entity_ids_list = item['entity_ids']
-        entity_ids_str = ', '.join(map(str, entity_ids_list))
+        entity_ids_str = ', '.join(map(str, entity_ids_list))        
         
         query = text(f"""
             SELECT SUM(estimation) FROM Task
-            WHERE entity_id IN ({entity_ids_str}) AND status='Создано'
+            WHERE entity_id IN ({entity_ids_str}) AND status='Создано' {areas_condition}
         """)
         
         with engine.connect() as connection:
@@ -49,7 +55,8 @@ def get_to_do_tasks(
 
 @digital_values_router.get('/get_in_work_tasks')
 def get_in_work_tasks(
-    sprint_names: list[str] = Query(...)
+    sprint_names: list[str] = Query(...),
+    areas: list[str] = Query([])
 ):
     result = []
     sprint_names_str = ', '.join(f"'{name}'" for name in sprint_names)
@@ -58,6 +65,11 @@ def get_in_work_tasks(
     FROM sprint
     WHERE sprint_name IN ({sprint_names_str})
     """)
+
+    areas_condition = ""
+    if areas:
+        areas_str = ', '.join(f"'{area}'" for area in areas)
+        areas_condition = f"AND area IN ({areas_str})"
 
     with engine.connect() as connection:
         entity_ids = connection.execute(query).scalar()
@@ -68,7 +80,7 @@ def get_in_work_tasks(
         
         query = text(f"""
             SELECT SUM(estimation) FROM Task
-            WHERE entity_id IN ({entity_ids_str}) AND status NOT IN ('Сделано', 'Снято')
+            WHERE entity_id IN ({entity_ids_str}) AND status NOT IN ('Сделано', 'Снято') {areas_condition}
         """)
         
         with engine.connect() as connection:
@@ -85,7 +97,8 @@ def get_in_work_tasks(
 
 @digital_values_router.get('/get_close_tasks')
 def get_close_tasks(
-    sprint_names: list[str] = Query(...)
+    sprint_names: list[str] = Query(...),
+    areas: list[str] = Query([])
 ):
     result = []
     sprint_names_str = ', '.join(f"'{name}'" for name in sprint_names)
@@ -94,6 +107,11 @@ def get_close_tasks(
     FROM sprint
     WHERE sprint_name IN ({sprint_names_str})
     """)
+
+    areas_condition = ""
+    if areas:
+        areas_str = ', '.join(f"'{area}'" for area in areas)
+        areas_condition = f"AND area IN ({areas_str})"
 
     with engine.connect() as connection:
         entity_ids = connection.execute(query).scalar()
@@ -104,7 +122,7 @@ def get_close_tasks(
         
         query = text(f"""
             SELECT SUM(estimation) FROM Task
-            WHERE entity_id IN ({entity_ids_str}) AND type IN ('История', 'Задача', 'Дефект') AND status IN('Закрыто', 'Выполнено')
+            WHERE entity_id IN ({entity_ids_str}) AND type IN ('История', 'Задача', 'Дефект') AND status IN('Закрыто', 'Выполнено') {areas_condition}
         """)
         
         with engine.connect() as connection:
@@ -121,7 +139,8 @@ def get_close_tasks(
 
 @digital_values_router.get('/get_cancel_tasks')
 def get_cancel_tasks(
-    sprint_names: list[str] = Query(...)
+    sprint_names: list[str] = Query(...),
+    areas: list[str] = Query([])
 ):
     result = []
     sprint_names_str = ', '.join(f"'{name}'" for name in sprint_names)
@@ -130,6 +149,11 @@ def get_cancel_tasks(
     FROM sprint
     WHERE sprint_name IN ({sprint_names_str})
     """)
+
+    areas_condition = ""
+    if areas:
+        areas_str = ', '.join(f"'{area}'" for area in areas)
+        areas_condition = f"AND area IN ({areas_str})"
 
     with engine.connect() as connection:
         entity_ids = connection.execute(query).scalar()
@@ -140,7 +164,7 @@ def get_cancel_tasks(
         
         query = text(f"""
             SELECT SUM(estimation) FROM Task
-            WHERE entity_id IN ({entity_ids_str}) AND status IN ('Закрыто', 'Выполнено') AND resolution IN('Отклонено', 'Отменено инициатором', 'Дубликат') OR entity_id IN ({entity_ids_str}) AND type='Дефект' AND status='Отклонен исполнителем'
+            WHERE entity_id IN ({entity_ids_str}) AND status IN ('Закрыто', 'Выполнено') AND resolution IN('Отклонено', 'Отменено инициатором', 'Дубликат') {areas_condition} OR entity_id IN ({entity_ids_str}) AND type='Дефект' AND status='Отклонен исполнителем' {areas_condition}
         """)
         
         with engine.connect() as connection:
