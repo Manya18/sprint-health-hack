@@ -1,6 +1,7 @@
 from .performance_analysis import performance_router
 from fastapi.middleware.cors import CORSMiddleware
 from .bottlenecks import bottlenecks_router
+from .digital_values import digital_values_router
 from .charts import charts_router
 from fastapi import FastAPI
 
@@ -19,3 +20,4 @@ app.add_middleware(
 app.include_router(performance_router)
 app.include_router(bottlenecks_router)
 app.include_router(charts_router)
+app.include_router(digital_values_router)

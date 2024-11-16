@@ -1,6 +1,5 @@
 from . import Base
-from sqlalchemy import Integer, String, Column, DateTime, ARRAY, Date, Float
-
+from sqlalchemy import  Table, Integer, String, Column, DateTime, ARRAY, Date, Float
 
 class Sprint(Base):
     __tablename__ = 'sprint'
