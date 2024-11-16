@@ -6,6 +6,7 @@ import {
     exportAllChartsToDOCX,
     exportAllChartsToPPTX
 } from "../../logic/exportFunction";
+import { useStore } from "../../logic/useStore";
 
 type OptionType = {
     value: string;
@@ -14,10 +15,9 @@ type OptionType = {
 
 const ActionBar = () => {
     const [selectedFormats, setSelectedFormats] = useState<OptionType[]>([]);
-    const [selectedSprint, setSelectedSprint] = useState<OptionType[]>([]);
-    const [selectedArea, setSelectedArea] = useState<OptionType[]>([]);
-
     const [areas, setAreas] = useState<OptionType[]>([]);
+
+    const {selectedAreas, setSelectedAreas, selectedSprints, setSelectedSprints} = useStore();
 
     const sprints: OptionType[] = [
         { value: "Sprint 1", label: "Sprint 1" },
@@ -74,8 +74,8 @@ const ActionBar = () => {
             <MultiSelect
                 className={styles.selector}
                 options={sprints}
-                value={selectedSprint}
-                onChange={setSelectedSprint}
+                value={selectedSprints}
+                onChange={setSelectedSprints}
                 labelledBy="Выберите спринт"
                 overrideStrings={{
                     selectSomeItems: "Выберите спринт",
@@ -113,8 +113,8 @@ const ActionBar = () => {
             <MultiSelect
                 className={styles.selector}
                 options={areas}
-                value={selectedArea}
-                onChange={setSelectedArea}
+                value={selectedAreas}
+                onChange={setSelectedAreas}
                 labelledBy="Выберите команду"
                 overrideStrings={{
                     selectSomeItems: "Выберите команду",

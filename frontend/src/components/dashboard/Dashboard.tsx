@@ -15,6 +15,7 @@ import './DashboardChartStyles.css';
 import BurnDownChart from '../charts/burnDown/BurnDownChart';
 import { BurnDownChartType, KeyIndicatorsType, SprintHealthChartType } from '../../types/chartsTypes';
 import KeyIndicators from '../charts/keyIndicators/KeyIndicators';
+import { useStore } from '../../logic/useStore';
 
 ChartJS.register(...registerables);
 

@@ -51,8 +51,6 @@ def get_to_do_tasks(
 
     return result
 
-
-
 @digital_values_router.get('/get_in_work_tasks')
 def get_in_work_tasks(
     sprint_names: list[str] = Query(...),
@@ -301,3 +299,92 @@ def update_task_duplicate(
         connection.execute(query)
 
     return {"status": "success", "message": "Tasks inserted into task_duplicate"}
+
+
+@digital_values_router.get('/get_completion_rate')
+def get_completion_rate(
+    sprint_names: list[str] = Query(...),
+    areas: list[str] = Query([])
+):
+
+    result = []
+    sprint_names_str = ', '.join(f"'{name}'" for name in sprint_names)
+    query = text(f"""
+        SELECT json_agg(json_build_object('entity_ids', entity_ids, 'sprint_name', sprint_name)) AS result
+    FROM sprint
+    WHERE sprint_name IN ({sprint_names_str})
+    """)
+
+    areas_condition = ""
+    if areas:
+        areas_str = ', '.join(f"'{area}'" for area in areas)
+        areas_condition = f"AND area IN ({areas_str})"
+
+    with engine.connect() as connection:
+        entity_ids = connection.execute(query).scalar()
+
+    for item in entity_ids:
+        entity_ids_list = item['entity_ids']
+        entity_ids_str = ', '.join(map(str, entity_ids_list))        
+        
+        query = text(f"""
+            SELECT SUM(estimation) FROM Task
+            WHERE entity_id IN ({entity_ids_str}) {areas_condition}
+        """)
+        
+        with engine.connect() as connection:
+            estimation = connection.execute(query).scalar()
+
+        result.append({
+            'sprint_name': item['sprint_name'],
+            'estimation': round(estimation / 3600, 1) if estimation is not None else 0
+        })
+
+    return result
+
+@digital_values_router.get('/success_rate_parameters')
+def success_rate_parameters(
+    sprint_names: list[str] = Query(...),
+    areas: list[str] = Query([])
+):
+    to_do_tasks = get_to_do_tasks(sprint_names, areas)
+    cancel_tasks = get_cancel_tasks(sprint_names, areas)
+    all_estimations = get_completion_rate(sprint_names, areas)
+
+    in_implementation_percentage = []
+    cancel_percentage = []
+
+    for i in range(len(to_do_tasks)):
+        sprint_name = to_do_tasks[i]['sprint_name']
+        to_do_estimation = to_do_tasks[i]['estimation']
+        all_estimation = all_estimations[i]['estimation']
+
+        if all_estimation > 0:
+            estimation_ratio = to_do_estimation / all_estimation * 100
+        else:
+            estimation_ratio = 0
+
+        in_implementation_percentage.append({
+            'sprint_name': sprint_name,
+            'estimation': round(estimation_ratio, 2)
+        })
+    
+    for i in range(len(cancel_tasks)):
+        sprint_name = cancel_tasks[i]['sprint_name']
+        cancel_estimation = cancel_tasks[i]['estimation']
+        all_estimation = all_estimations[i]['estimation']
+
+        if all_estimation > 0:
+            cancel_ratio = cancel_estimation / all_estimation * 100
+        else:
+            cancel_ratio = 0
+
+        cancel_percentage.append({
+            'sprint_name': sprint_name,
+            'estimation': round(cancel_ratio, 2)
+        })
+
+    return {
+        "in_implementation_percentage": in_implementation_percentage,
+        "cancel_percentage": cancel_percentage
+    }
