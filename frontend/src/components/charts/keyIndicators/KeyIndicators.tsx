@@ -13,8 +13,8 @@ const KeyIndicators = ({ data, sprintName }: { data: KeyIndicatorsType[], sprint
 
     return (
         <div className={styles.keyIndicators}>
-            {indicators.map(ind => (
-                <div className={styles.indicator}>
+            {indicators.map((ind, index) => (
+                <div key={index} className={styles.indicator}>
                     <span className={styles.label}>{ind.label}</span>
                     <span className={styles.count}>{ind.count}</span>
                 </div>
