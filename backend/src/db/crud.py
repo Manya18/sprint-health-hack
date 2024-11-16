@@ -1,6 +1,7 @@
 from datetime import datetime, date
 from .models import Sprint, Task, History
 from . import Session
+import pandas as pd
 
 
 def get_tasks_records_with_filter(
@@ -39,6 +40,13 @@ def get_tasks_records_with_filter(
             (Task.resolution == resolution if resolution else True)
         )
     return tasks.all()
+
+
+def get_all_tasks_by_sprint_name(sprint_name: str) -> pd.DataFrame:
+    with Session() as session:
+        sprint = session.query(Sprint).where(Sprint.sprint_name == sprint_name).one()
+        tasks = session.query(Task).where(Task.entity_id.in_(sprint.entity_ids))
+    return pd.read_sql(tasks.statement, tasks.session.bind)
 
 
 def delete_all_rows_from_task_table():
