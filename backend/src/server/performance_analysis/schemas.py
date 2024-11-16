@@ -26,7 +26,7 @@ class TaskFilteredParams(BaseModel):
     name:               str | None
     create_date:        datetime | None
     created_by:         str | None
-    update_date:        datetime | datetime
+    update_date:        datetime | None
     updated_by:         str | None
     parent_ticket_id:   int | None
     assignee:           str | None
