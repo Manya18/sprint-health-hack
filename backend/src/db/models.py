@@ -10,6 +10,7 @@ class Sprint(Base):
     sprint_end_date = Column(DateTime)
     entity_ids = Column(ARRAY(Integer))
 
+
 class Task(Base):
     __tablename__ = 'task'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -34,6 +35,7 @@ class Task(Base):
     spent = Column(Float)
     workgroup = Column(String)
     resolution = Column(String)
+
 
 class History(Base):
     __tablename__ = 'history'

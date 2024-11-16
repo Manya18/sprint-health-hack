@@ -1,5 +1,5 @@
+from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base
 import os
 
 engine = create_engine(
@@ -8,6 +8,7 @@ engine = create_engine(
     f"{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
 )
 
+Session = sessionmaker(bind=engine)
 Base = declarative_base()
 from .models import *
 Base.metadata.create_all(engine)
