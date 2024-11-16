@@ -9,7 +9,7 @@ from io import BytesIO
 from db import engine
 import pandas as pd
 import os
-
+from sqlalchemy.dialects.postgresql import ARRAY
 
 @performance_router.post('/performance_prediction')
 def predict_performance(task_params: PerformanceTaskParams) -> list[TaskStatus]:
@@ -87,11 +87,31 @@ def upload_history_file(file: UploadFile = File(...)):
     buffer = BytesIO(contents)
 
     df = pd.read_csv(buffer, sep=';', skiprows=1)
-    print(df.head())
+
+    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+    df = df.drop(columns=['Столбец1'], errors='ignore')
+    df = df.dropna()
+
+    df['history_date'] = pd.to_datetime(df['history_date'])
+    table_name = 'history'
+
+    with engine.connect() as connection:
+        connection.execute(text(f"DELETE FROM {table_name};"))
+
+    dtype = {
+        'entity_id': Integer,
+        'history_property_name': String,
+        'history_date': DateTime,
+        'history_version': Float,
+        'history_change_type': String,
+        'history_change': String
+    }
+
+    df.to_sql(table_name, engine, if_exists='replace', index=False, dtype=dtype)
 
     buffer.close()
     file.file.close()
-    return {'message': 'Файл успешно загружен'}
+    return {'message': 'Файл успешно загружен в базу данных'}
 
 
 @performance_router.post('/upload_sprint_file')
@@ -105,11 +125,26 @@ def upload_sprint_file(file: UploadFile = File(...)):
     buffer = BytesIO(contents)
 
     df = pd.read_csv(buffer, sep=';', skiprows=1)
-    print(df.head())
+    df['entity_ids'] = df['entity_ids'].apply(lambda x: list(map(int, x.strip('{}').split(','))))
+    table_name = 'sprint'
+
+    with engine.connect() as connection:
+        connection.execute(text(f"DELETE FROM {table_name};"))
+
+    dtype = {
+        'sprint_name': String,
+        'sprint_status': String,
+        'sprint_start_date': DateTime,
+        'sprint_end_date': DateTime,
+        'entity_ids': ARRAY(Integer)
+    }
+
+    df.to_sql(table_name, engine, if_exists='replace', index=False, dtype=dtype)
 
     buffer.close()
     file.file.close()
-    return {'message': 'Файл успешно загружен'}
+    return {'message': 'Файл успешно загружен в базу данных'}
+
 
 
 @performance_router.get('/sprint/{sprint_name}')
