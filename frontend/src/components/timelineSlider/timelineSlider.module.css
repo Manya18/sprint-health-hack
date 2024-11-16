@@ -1,0 +1,31 @@
+.timelineSlider{
+    margin-top: 20px;
+    padding: 10px;
+    width: 100%;
+    background-color: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    border-radius: 10px;
+}
+.wrapper{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+}
+.inputsWrapper{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 0 50px;
+}
+.inputWrapper{
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.sliderWrapper{
+    padding: 0 50px;
+}

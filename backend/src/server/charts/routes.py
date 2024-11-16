@@ -30,6 +30,21 @@ def get_unique_sprints():
 
     return {"unique_sprints": sprint_names}
 
+@charts_router.get('/get_unique_areas')
+def get_unique_areas():
+    
+    query = text("""
+        SELECT DISTINCT area 
+        FROM task
+    """)
+
+    with engine.connect() as connection:
+        areas = connection.execute(query).scalars().all()
+
+    if not areas:
+        return {"error": "Нет доступных спринтов"}
+
+    return {"unique_areas": areas}
 
 @charts_router.get('/burn-down-chart')
 def get_burn_down_chart(sprint_name='Спринт 2023.1.1'):

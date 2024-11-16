@@ -1,5 +1,5 @@
 import styles from "./actionBar.module.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MultiSelect } from "react-multi-select-component";
 import {
     exportAllChartsToPDF,
@@ -15,6 +15,9 @@ type OptionType = {
 const ActionBar = () => {
     const [selectedFormats, setSelectedFormats] = useState<OptionType[]>([]);
     const [selectedSprint, setSelectedSprint] = useState<OptionType[]>([]);
+    const [selectedArea, setSelectedArea] = useState<OptionType[]>([]);
+
+    const [areas, setAreas] = useState<OptionType[]>([]);
 
     const sprints: OptionType[] = [
         { value: "Sprint 1", label: "Sprint 1" },
@@ -26,6 +29,23 @@ const ActionBar = () => {
         { value: "docx", label: "DOCX" },
         { value: "pptx", label: "PPTX" },
     ];
+
+    useEffect(() => {
+        const getUniqueAreas = async () => {
+            try {
+                const response = await fetch("http://localhost:8000/get_unique_areas");
+                const data = await response.json()
+                const sprintOptions = data.unique_areas.map((name: string) => ({
+                    value: name,
+                    label: name
+                }));
+                setAreas(sprintOptions);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        getUniqueAreas()
+    }, []);
 
     const handleExport = () => {
         if (selectedFormats.length > 0) {
@@ -90,6 +110,19 @@ const ActionBar = () => {
                 </button>
             </div>
 
+            <MultiSelect
+                className={styles.selector}
+                options={areas}
+                value={selectedArea}
+                onChange={setSelectedArea}
+                labelledBy="Выберите команду"
+                overrideStrings={{
+                    selectSomeItems: "Выберите команду",
+                    allItemsAreSelected: "Все команды выбраны",
+                    selectAll: "Выбрать все",
+                    clearAll: "Очистить выбор"
+                }}
+            />
             <button className={styles.resetButton}>Сбросить</button>
         </div>
     );
