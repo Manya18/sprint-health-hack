@@ -18,3 +18,8 @@
 .selector{
     width: 200px;
 }
+
+.export {
+    display: flex;
+    gap: 10px;
+}
