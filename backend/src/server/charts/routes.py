@@ -1,8 +1,9 @@
 from ..config import SERVER_DIR_PATH
 from . import charts_router
 import pandas as pd
-import json
+from db import engine
 import os
+from sqlalchemy import text
 
 
 @charts_router.get('/data')
@@ -12,14 +13,22 @@ def get_data():
     return df.to_dict(orient='records')
 
 
-@charts_router.get('/unique-sprints')
+@charts_router.get('/get_unique_sprints')
 def get_unique_sprints():
-    df = pd.read_csv(os.path.join(SERVER_DIR_PATH, 'file', f"uploaded_file.csv"))
+    
+    
+    query = text("""
+        SELECT DISTINCT sprint_name 
+        FROM sprint
+    """)
 
-    # Получение уникальных значений из столбца "Имя спринта"
-    unique_sprints = df['Имя спринта'].unique().tolist()
+    with engine.connect() as connection:
+        sprint_names = connection.execute(query).scalars().all()
 
-    return {'unique_sprints': unique_sprints}
+    if not sprint_names:
+        return {"error": "Нет доступных спринтов"}
+
+    return {"unique_sprints": sprint_names}
 
 
 @charts_router.get('/burn-down-chart')
