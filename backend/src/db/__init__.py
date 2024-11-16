@@ -1,6 +1,13 @@
-from sqlalchemy import create_engine, Column, Integer, String, Sequence
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base
 import os
 
-engine = create_engine(f"postgresql+psycopg2://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}")
-# with engine.connect() as conn:
-#     conn.execute("SET DateStyle=''")
+engine = create_engine(
+    f"postgresql+psycopg2://{os.getenv('DB_USER')}:"
+    f"{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:"
+    f"{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
+)
+
+Base = declarative_base()
+from .models import *
+Base.metadata.create_all(engine)
