@@ -1,12 +1,12 @@
+from db.crud import (get_tasks_records_with_filter, delete_all_rows_from_task_table,
+                     delete_all_rows_from_history_table, delete_all_rows_from_sprint_table)
 from .schemas import PerformanceTaskParams, TaskStatus, TaskFilteredParams
 from sqlalchemy import Integer, String, Float, DateTime, Date
 from fastapi import HTTPException, UploadFile, File
 from sqlalchemy.dialects.postgresql import ARRAY
 from ml.models import RANDOM_FOREST_MODEL
-from db.crud import get_tasks_records_with_filter
 from ..config import SERVER_DIR_PATH
 from . import performance_router
-from sqlalchemy import text
 from io import BytesIO
 from db import engine
 import pandas as pd
@@ -71,6 +71,7 @@ def upload_data_file(file: UploadFile = File(...)):
         'resolution': String
     }
 
+    delete_all_rows_from_task_table()
     df.to_sql(table_name, engine, if_exists='replace', index=False, dtype=dtype)
 
     buffer.close()
@@ -108,6 +109,7 @@ def upload_history_file(file: UploadFile = File(...)):
         'history_change': String
     }
 
+    delete_all_rows_from_history_table()
     df.to_sql(table_name, engine, if_exists='replace', index=False, dtype=dtype)
 
     buffer.close()
@@ -139,6 +141,7 @@ def upload_sprint_file(file: UploadFile = File(...)):
         'entity_ids': ARRAY(Integer)
     }
 
+    delete_all_rows_from_sprint_table()
     df.to_sql(table_name, engine, if_exists='replace', index=False, dtype=dtype)
 
     buffer.close()

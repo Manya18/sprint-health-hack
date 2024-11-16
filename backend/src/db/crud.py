@@ -1,5 +1,5 @@
 from datetime import datetime, date
-from .models import Sprint, Task
+from .models import Sprint, Task, History
 from . import Session
 
 
@@ -40,3 +40,20 @@ def get_tasks_records_with_filter(
         )
     return tasks.all()
 
+
+def delete_all_rows_from_task_table():
+    with Session() as session:
+        session.query(Task).delete()
+        session.commit()
+
+
+def delete_all_rows_from_history_table():
+    with Session() as session:
+        session.query(History).delete()
+        session.commit()
+
+
+def delete_all_rows_from_sprint_table():
+    with Session() as session:
+        session.query(Sprint).delete()
+        session.commit()
