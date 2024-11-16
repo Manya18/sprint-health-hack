@@ -7,17 +7,6 @@ load_dotenv(os.path.join(pathlib.Path(__file__).parent.parent.resolve(), '.env')
 
 from server import app
 import uvicorn
-from database import Database
-
-
-db = Database()
-
-# async def lifespan(app):
-#     await db.connect()
-#     yield
-#     await db.disconnect()
-#
-# app.lifespan = lifespan
 
 
 if __name__ == "__main__":

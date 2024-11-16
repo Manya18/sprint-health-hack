@@ -1,3 +1,4 @@
+from sqlalchemy import Integer, String, Float, DateTime, Date
 from fastapi import HTTPException, UploadFile, File
 from .schemas import PerformanceTaskParams, TaskStatus
 from ml.models import RANDOM_FOREST_MODEL
@@ -38,12 +39,37 @@ def upload_data_file(file: UploadFile = File(...)):
     buffer = BytesIO(contents)
 
     df = pd.read_csv(buffer, sep=';', skiprows=1)
+    df['due_date'] = pd.to_datetime(df['due_date'])
     table_name = 'task'
 
     with engine.connect() as connection:
         connection.execute(text(f"DELETE FROM {table_name};"))
 
-    df.to_sql(table_name, engine, if_exists='replace', index=False)
+    dtype = {
+        'entity_id': Integer,
+        'area': String,
+        'type': String,
+        'status': String,
+        'state': String,
+        'priority': String,
+        'ticket_number': String,
+        'name': String,
+        'create_date': DateTime,
+        'created_by': String,
+        'update_date': DateTime,
+        'uploaded_by': String,
+        'parent_ticket_id': Integer,
+        'assignee': String,
+        'owner': String,
+        'due_date': Date,
+        'rank': String,
+        'estimation': Float,
+        'spent': Float,
+        'workgroup': String,
+        'resolution': String
+    }
+
+    df.to_sql(table_name, engine, if_exists='replace', index=False, dtype=dtype)
 
     buffer.close()
     file.file.close()
