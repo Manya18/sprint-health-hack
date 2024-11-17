@@ -104,6 +104,12 @@ def upload_history_file(file: UploadFile = File(...)):
 
     df = df.reset_index()
     df = df.rename(columns={"index": "id"})
+    df[['before', 'after']] = df['history_change'].str.split('->', expand=True)
+
+    # Удаление лишних пробелов
+    df['before'] = df['before'].str.strip()
+    df['after'] = df['after'].str.strip()
+
     df['history_date'] = pd.to_datetime(df['history_date'])
 
     status_translation = {
@@ -136,7 +142,9 @@ def upload_history_file(file: UploadFile = File(...)):
         'history_date': DateTime,
         'history_version': Float,
         'history_change_type': String,
-        'history_change': String
+        'history_change': String,
+        'before': String,
+        'after': String
     }
 
     delete_all_rows_from_history_table()
