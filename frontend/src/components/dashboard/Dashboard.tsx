@@ -13,17 +13,18 @@ import { v4 as uuidv4 } from 'uuid';
 import SprintHealthChart from '../charts/sprintHealth/SprintHealthChart';
 import './DashboardChartStyles.css';
 import BurnDownChart from '../charts/burnDown/BurnDownChart';
-import { BurnDownChartType, KeyIndicatorsType, SprintHealthChartType } from '../../types/chartsTypes';
+import { BurnDownChartType, KeyIndicatorsType, SprintHealthChartType, sprintSuccessRateType } from '../../types/chartsTypes';
 import KeyIndicators from '../charts/keyIndicators/KeyIndicators';
 import { useStore } from '../../logic/useStore';
 import axios from 'axios';
+import SprintSuccessRate from '../charts/sprintSuccessRate/SprintSuccessRate';
 
 ChartJS.register(...registerables);
 
 interface ChartData {
     id: string;
     type: string;
-    data: SprintHealthChartType | BurnDownChartType | KeyIndicatorsType[];
+    data: SprintHealthChartType | BurnDownChartType | KeyIndicatorsType[] | sprintSuccessRateType;
     name: string;
     xAxisTitle: string;
     yAxisTitle: string;
@@ -53,11 +54,11 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
     const [charts, setCharts] = useState<ChartData[]>([]);
     const [startDate, setStartDate] = useState('')
     const [endDate, setEndDate] = useState('')
-
+    const { chartsBase } = useStore();
     const { timelineEnd, selectedAreas } = useStore();
 
     async function getToDoTasks(sprintNames: string[]) {
-        if(sprintNames){
+        if (sprintNames) {
             try {
                 const sprintNamesStr = sprintNames.join(',');
                 const areasStr = selectedAreas.length > 0 ? selectedAreas.join(',') : '';
@@ -81,7 +82,7 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
 
     useEffect(() => {
         const getDates = async (sprintNames: string[]) => {
-            if(sprintNames[0]){
+            if (sprintNames[0]) {
                 try {
                     const response = await fetch(`http://localhost:8000/get_sprint_period?sprint_name=${sprintNames[0]}`);
                     const data = await response.json();
@@ -94,10 +95,10 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
         };
         getDates(selectedSprint)
     }, [selectedSprint, selectedAreas])
-        
+
 
     async function getInWorkTasks(sprintNames: string[]) {
-        if(selectedSprint){
+        if (selectedSprint) {
             try {
                 const sprintNamesStr = sprintNames.join(',');
                 const areasStr = selectedAreas.length > 0 ? selectedAreas.join(',') : undefined;
@@ -121,7 +122,7 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
     }
 
     async function getCloseTasks(sprintNames: string[]) {
-        if(sprintNames){
+        if (sprintNames) {
             try {
                 const sprintNamesStr = sprintNames.join(',');
                 const areasStr = selectedAreas.length > 0 ? selectedAreas.join(',') : undefined;
@@ -145,7 +146,7 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
     }
 
     async function getCancelTasks(sprintNames: string[]) {
-        if(selectedSprint){
+        if (selectedSprint) {
             try {
                 const sprintNamesStr = sprintNames.join(',');
                 const areasStr = selectedAreas.length > 0 ? selectedAreas.join(',') : undefined;
@@ -169,7 +170,7 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
     }
 
     const updateTaskDuplicate = async ({ selectedSprint }: UpdateTaskDuplicateParams) => {
-        if(selectedSprint){
+        if (selectedSprint) {
             try {
                 const finalTimeline = timelineEnd.toISOString().split('T')[0] || endDate;
 
@@ -192,7 +193,7 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
         }
     };
     async function getBacklog(sprintNames: string[]) {
-        if(sprintNames[0]){
+        if (sprintNames[0]) {
             try {
                 const sprintNamesStr = sprintNames.join(',');
                 const areasStr = selectedAreas.length > 0 ? selectedAreas.join(',') : undefined;
@@ -221,7 +222,7 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
     });
 
     const fetchBurnDownData = async (selectedSprint: string[]) => {
-        if(selectedSprint){
+        if (selectedSprint) {
             try {
                 const data = await Promise.all(
                     selectedSprint.map(async (sprintName) => {
@@ -231,7 +232,7 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
                         return response.data || { dates: [], remainingWork: [] };
                     })
                 );
-    
+
                 const dates = data.flatMap((d) => d.dates || []);
                 const remainingWork = data.flatMap((d) => d.remainingWork || []);
                 return { dates, remainingWork };
@@ -245,15 +246,62 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
         const loadBurnDownData = async () => {
             if (selectedSprint && selectedSprint.length > 0) {
                 const data = await fetchBurnDownData(selectedSprint);
-                if(data) setBurnDownData(data);
+                if (data) setBurnDownData(data);
             }
         };
 
         loadBurnDownData();
     }, [selectedSprint, selectedAreas]);
 
+    const [inImplementation, setInImplementation] = useState(0);
+    const [cancel, setCancel] = useState(0);
+    const [backlog, setBacklog] = useState(0);
+    const [resolution, setResolution] = useState('');
+
+    useEffect(() => {
+        const getSuccessParams = async () => {
+            try {
+                const response = await fetch(`http://localhost:8000/success_rate_parameters?sprint_names=${selectedSprint}`);
+                const data = await response.json()
+                setInImplementation(data.in_implementation_percentage);
+                setCancel(data.cancel_percentage)
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        const getBacklog = async () => {
+            try {
+                const response = await fetch(`http://localhost:8000/backlog_changes_persentage?sprint_names=${selectedSprint}`);
+                const data = await response.json()
+                setBacklog(data)
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        getSuccessParams()
+        getBacklog()
+    }, []);
+
+    const successRateData: sprintSuccessRateType = {
+        inImplementation: inImplementation,
+        cancel: cancel,
+        backlog: backlog,
+        resolution: resolution,
+    };
+
+    console.log(inImplementation, cancel, backlog)
+    useEffect(() => {
+        if (inImplementation <= 0.2 && cancel <= 0.1 && backlog <= 0.2) {
+            setResolution("Спринт успешен!");
+        } else if (inImplementation > 0.8 && cancel > 0.9 && backlog > 0.8) {
+            setResolution("Спринт неуспешен");
+        } else {
+            setResolution("Резолюция не определена");
+        }
+    }, [inImplementation, cancel, backlog]);
+
     const fetchChartData = async (sprintNames: string[]) => {
-        if(sprintNames){
+        if (sprintNames) {
             const [toDo, inWork, closed, canceled, backlog] = await Promise.all([
                 getToDoTasks(sprintNames),
                 getInWorkTasks(sprintNames),
@@ -267,13 +315,12 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
             const doneEstimations = closed.map((task: { estimation: any; }) => task.estimation);
             const canceledEstimations = canceled.map((task: { estimation: any; }) => task.estimation);
 
-            console.log('oo', backlog)
             const keyIndicatorsData: KeyIndicatorsType[] = [
                 { label: 'К выполнению', count: toDoEstimations },
                 { label: 'В работе', count: inWorkEstimations },
                 { label: 'Сделано', count: doneEstimations },
                 { label: 'Снято', count: canceledEstimations },
-                { label: 'Бэклог изменен с начала спринта на', count: backlog ??  '' },
+                { label: 'Бэклог изменен с начала спринта на', count: backlog ?? '' },
             ];
 
             const burnDownData = await fetchBurnDownData(sprintNames);
@@ -299,6 +346,16 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
                     title: 'Диаграмма сгорания',
                     gridPosition: { x: 6, y: 0, w: 5, h: 8 },
                 },
+                {
+                    id: '3',
+                    type: 'sprintSuccessRate',
+                    data: successRateData!,
+                    name: 'Оценка здоровья спринта',
+                    xAxisTitle: '',
+                    yAxisTitle: '',
+                    title: 'Оценка здоровья спринта',
+                    gridPosition: { x: 0, y: 10, w: 4, h: 6 },
+                }
             ]);
         }
     };
@@ -337,8 +394,16 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
                     data={keyIndicates}
                     sprintName={selectedSprint[0]}
                 />;
+            case 'sprintSuccessRate':
+                const sprintSuccessRate = chart.data as unknown as sprintSuccessRateType;
+                return (
+                    <SprintSuccessRate
+                        key={chart.id}  // Используем chart.id как ключ
+                        data={sprintSuccessRate}
+                        sprintName={selectedSprint[0]}
+                    />)
             default:
-                return null;
+                return chartsBase;
         }
     };
 
@@ -473,6 +538,7 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
                         </div>
                     </div>
                 ))}
+
             </GridLayout>
 
 

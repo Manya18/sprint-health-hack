@@ -17,9 +17,9 @@ function App() {
     <div className="App">
       <FilesUpload />
       <ActionBar onSprintChange={handleSprintChange} />
-      <TimelineSlider sprintNames={selectedSprints}/>
+      <TimelineSlider sprintNames={selectedSprints} />
       <Dashboard selectedSprint={selectedSprints} />
-      <SprintSuccessRate sprintName={selectedSprints[0]}/>
+      {/* <SprintSuccessRate sprintName={selectedSprints[0]}/> */}
     </div>
   );
 }

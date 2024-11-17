@@ -12,5 +12,13 @@ export type SprintHealthChartType = {
 }
 export type KeyIndicatorsType = {
     label: string;
-    count: number;
+    count: number[];
 }
+
+export type sprintSuccessRateType = {
+    inImplementation: number;
+    cancel: number;
+    backlog: number;
+    resolution: string;
+}
+

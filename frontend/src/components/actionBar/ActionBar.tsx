@@ -1,12 +1,14 @@
 import styles from "./actionBar.module.css";
-import { useEffect, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { MultiSelect } from "react-multi-select-component";
-import {
-    exportAllChartsToPDF,
-    exportAllChartsToDOCX,
-    exportAllChartsToPPTX
-} from "../../logic/exportFunction";
+import { exportAllChartsToPDF, exportAllChartsToDOCX, exportAllChartsToPPTX } from "../../logic/exportFunction";
 import { useStore } from "../../logic/useStore";
+import SprintHealthChart from "../charts/sprintHealth/SprintHealthChart";
+import BurnDownChart from "../charts/burnDown/BurnDownChart";
+import CircularChart from "../charts/baseCharts/CircularChart";
+import RingChart from "../charts/baseCharts/RingChart";
+import { BarChart } from "@mui/icons-material";
+import { JSX } from "react/jsx-runtime";
 
 type OptionType = {
     value: string;
@@ -25,7 +27,7 @@ const ActionBar = ({ onSprintChange }: ActionBarProps) => {
     const [selectedCharts, setSelectedCharts] = useState<OptionType[]>([]);
     const [sprints, setSprints] = useState<OptionType[]>([]);
 
-    const { selectedAreas, setSelectedAreas, selectedSprints, setSelectedSprints } = useStore();
+    const { selectedAreas, setSelectedAreas, selectedSprints, setSelectedSprints, addChart } = useStore();
 
     const chartTypes: OptionType[] = [
         { value: "sprintHealth", label: "Здоровье спринта" },
@@ -69,6 +71,7 @@ const ActionBar = ({ onSprintChange }: ActionBarProps) => {
                 console.error("Ошибка при загрузке спринтов:", error);
             }
         };
+
         fetchUniqueAreas()
         fetchSprints()
     }, []);
@@ -99,31 +102,42 @@ const ActionBar = ({ onSprintChange }: ActionBarProps) => {
         setSelectedSprint(selected);
         onSprintChange(selected.map((item) => item.value));
     };
-    // const handleAddCharts = () => {
-    //     const newCharts = [...charts];
-    //     selectedCharts.forEach((chart) => {
-    //         switch (chart.value) {
-    //             case "sprintHealth":
-    //                 newCharts.push(<SprintHealthChart key="sprintHealth" />);
-    //                 break;
-    //             case "burnDown":
-    //                 newCharts.push(<BurnDownChart key="burnDown" />);
-    //                 break;
-    //             case "circular":
-    //                 newCharts.push(<CircularChart key="circular" />);
-    //                 break;
-    //             case "ring":
-    //                 newCharts.push(<RingChart key="ring" />);
-    //                 break;
-    //             case "bar":
-    //                 newCharts.push(<BarChart key="bar" />);
-    //                 break;
-    //             default:
-    //                 break;
-    //         }
-    //     });
-    //     setCharts(newCharts); // Обновляем состояние диаграмм
-    // };
+
+    const handleAddCharts = () => {
+        const newCharts: ReactNode[] | JSX.Element[] = [];
+        selectedCharts.forEach((chart) => {
+            switch (chart.value) {
+                case "sprintHealth":
+                    newCharts.push(<SprintHealthChart key="sprintHealth" data={{
+                        toDo: 0,
+                        inProgress: 0,
+                        done: 0,
+                        removed: 0,
+                        backlogChange: 0,
+                        blocked: 0
+                    }} sprintName={""} />);
+                    break;
+                case "burnDown":
+                    newCharts.push(<BurnDownChart key="burnDown" data={{
+                        dates: ['1'],
+                        remainingWork: [1]
+                    }} sprintName={""} />);
+                    break;
+                case "circular":
+                    newCharts.push(<CircularChart key="circular" data={{}} labels={[]} />);
+                    break;
+                case "ring":
+                    newCharts.push(<RingChart key="ring" data={{}} labels={[]} />);
+                    break;
+                case "bar":
+                    newCharts.push(<BarChart key="bar" />);
+                    break;
+                default:
+                    break;
+            }
+        });
+        addChart(newCharts); 
+    };
 
     return (
         <div className={styles.actionBar}>
@@ -141,7 +155,7 @@ const ActionBar = ({ onSprintChange }: ActionBarProps) => {
                 }}
             />
 
-            {/* <button className="primary-button" onClick={handleAddCharts}>+ диаграмма</button> */}
+            <button className="primary-button" onClick={handleAddCharts}>+ диаграмма</button>
 
             <MultiSelect
                 className={styles.selector}
@@ -156,6 +170,7 @@ const ActionBar = ({ onSprintChange }: ActionBarProps) => {
                     clearAll: "Очистить выбор"
                 }}
             />
+
             <div className={styles.export}>
                 <MultiSelect
                     className={styles.selector}
@@ -178,6 +193,7 @@ const ActionBar = ({ onSprintChange }: ActionBarProps) => {
                     Экспортировать
                 </button>
             </div>
+
             <MultiSelect
                 className={styles.selector}
                 options={areas}
@@ -193,7 +209,6 @@ const ActionBar = ({ onSprintChange }: ActionBarProps) => {
             />
 
             <button className={styles.resetButton}>Сбросить</button>
-
         </div>
     );
 };
