@@ -155,7 +155,19 @@ const ActionBar = ({ onSprintChange }: ActionBarProps) => {
                 }}
             />
 
-            <button className="primary-button" onClick={handleAddCharts}>+ диаграмма</button>
+            <MultiSelect
+                className={styles.selector}
+                options={areas}
+                value={selectedAreas}
+                onChange={setSelectedAreas}
+                labelledBy="Выберите команду"
+                overrideStrings={{
+                    selectSomeItems: "Выберите команду",
+                    allItemsAreSelected: "Все команды выбраны",
+                    selectAll: "Выбрать все",
+                    clearAll: "Очистить выбор"
+                }}
+            />
 
             <MultiSelect
                 className={styles.selector}
@@ -170,7 +182,8 @@ const ActionBar = ({ onSprintChange }: ActionBarProps) => {
                     clearAll: "Очистить выбор"
                 }}
             />
-
+            <button className="primary-button" onClick={handleAddCharts}>+ диаграмма</button>
+            
             <div className={styles.export}>
                 <MultiSelect
                     className={styles.selector}
@@ -193,22 +206,6 @@ const ActionBar = ({ onSprintChange }: ActionBarProps) => {
                     Экспортировать
                 </button>
             </div>
-
-            <MultiSelect
-                className={styles.selector}
-                options={areas}
-                value={selectedAreas}
-                onChange={setSelectedAreas}
-                labelledBy="Выберите команду"
-                overrideStrings={{
-                    selectSomeItems: "Выберите команду",
-                    allItemsAreSelected: "Все команды выбраны",
-                    selectAll: "Выбрать все",
-                    clearAll: "Очистить выбор"
-                }}
-            />
-
-            <button className={styles.resetButton}>Сбросить</button>
         </div>
     );
 };

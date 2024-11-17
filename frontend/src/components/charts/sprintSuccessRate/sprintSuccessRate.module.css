@@ -1,8 +1,15 @@
-.wrapper{
-    
+.title{
+    margin: 0;
+    margin-bottom: 5px;
+    text-align: center;
+    font-weight: 600;
 }
 .sprintSuccessRate{
     display: grid;
     grid-template-columns: 200px 200px;
     grid-template-rows: auto auto;
+}
+.chartWrapper{
+    text-align: center;
+    font-weight: 500;
 }

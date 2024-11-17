@@ -5,7 +5,6 @@ const KeyIndicators = ({ data, sprintName }: { data: KeyIndicatorsType[], sprint
 
     return (
         <div className={styles.keyIndicators}>
-            <h4>{sprintName}</h4>
             {data.map((ind, index) => (
                 <div key={index} className={styles.indicator}>
                     <span className={styles.label}>{ind.label}</span>

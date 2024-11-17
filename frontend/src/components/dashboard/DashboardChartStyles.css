@@ -3,6 +3,11 @@
     align-self: flex-start;
 }
 
+.appContainer{
+    background-color: #FFF;
+    margin-top: 10px;
+    border-radius: 10px;
+}
 .moreVertIcon {
     cursor: pointer;
     position: absolute;

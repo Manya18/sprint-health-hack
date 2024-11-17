@@ -228,8 +228,8 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
             try {
                 const response = await fetch(`http://localhost:8000/success_rate_parameters?sprint_names=${selectedSprint}`);
                 const data = await response.json()
-                setInImplementation(data.in_implementation_percentage);
-                setCancel(data.cancel_percentage)
+                setInImplementation(data.in_implementation_percentage[0].estimation);
+                setCancel(data.cancel_percentage[0].estimation)
             } catch (e) {
                 console.error(e);
             }
