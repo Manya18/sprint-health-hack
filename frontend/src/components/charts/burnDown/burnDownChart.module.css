@@ -1,7 +1,19 @@
 .title {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 500;
   margin: 5px 7px 15px;
   display: flex;
   align-items: center;
+}
+
+.title {
+  font-size: 18px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.burnDownChart_title__6aylX {
+  font-size: 18px;
+  margin-bottom: -15px;
+  text-align: center;
 }

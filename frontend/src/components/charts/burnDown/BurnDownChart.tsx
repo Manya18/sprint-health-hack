@@ -6,19 +6,19 @@ import { BurnDownChartType } from '../../../types/chartsTypes';
 
 ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement, TimeScale);
 
-
 const BurnDownChart = ({ data, sprintName }: { data: BurnDownChartType, sprintName: string }) => {
     const [chartData, setChartData] = useState<any>(null);
     const chartRef = useRef(null);
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
-        return date.toISOString().split('T')[0];  // дата в формате YYYY-MM-DD
+        const day = String(date.getDate()).padStart(2, '0');  
+        const month = String(date.getMonth() + 1).padStart(2, '0');  
+        return `${day}.${month}`;
     };
 
     const isHolidayOrWeekend = (date: Date) => {
         const dayOfWeek = date.getDay();
-        const dateString = date.toISOString().split('T')[0];
         return dayOfWeek === 0 || dayOfWeek === 6;
     };
 
@@ -60,40 +60,37 @@ const BurnDownChart = ({ data, sprintName }: { data: BurnDownChartType, sprintNa
     }, [data]);
 
     return (
-        <div>
-            <div className={styles.title}>{`Диаграмма сгорания для спринта: ${sprintName}`}</div>
-            <div>
-                <div ref={chartRef}>
-                    {chartData ? (
-                        <Line
-                            data={chartData}
-                            options={{
-                                responsive: true,
-                                plugins: {
-                                    title: {
-                                        display: true,
-                                        text: '',
-                                    },
+        <div className={styles.chartContainer}>
+            <div className={styles.title}>{`Диаграмма сгорания спринта: ${sprintName}`}</div>
+            {chartData ? (
+                <Line
+                    ref={chartRef}
+                    data={chartData}
+                    options={{
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: '',
+                            },
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Дата',
                                 },
-                                scales: {
-                                    x: {
-                                        title: {
-                                            display: true,
-                                            text: 'Дата',
-                                        },
-                                    },
-                                    y: {
-                                        title: {
-                                            display: true,
-                                            text: 'Оставшаяся работа (часы)',
-                                        },
-                                    },
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Оставшаяся работа (часы)',
                                 },
-                            }}
-                        />
-                    ) : null}
-                </div>
-            </div>
+                            },
+                        },
+                    }}
+                />
+            ) : null}
         </div>
     );
 };

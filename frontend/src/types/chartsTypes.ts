@@ -2,7 +2,6 @@ export type BurnDownChartType = {
     dates: string[];
     remainingWork: number[];
 }
-  
 export type SprintHealthChartType = {
     toDo: number;
     inProgress: number;
@@ -11,7 +10,6 @@ export type SprintHealthChartType = {
     backlogChange: number;
     blocked: number;
 }
-  
 export type KeyIndicatorsType = {
     label: string;
     count: number;

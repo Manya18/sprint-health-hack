@@ -6,17 +6,9 @@ import os
 from sqlalchemy import text
 from sqlalchemy import Integer, String, Float, DateTime, Date
 
-@charts_router.get('/data')
-def get_data():
-    df = pd.read_csv(os.path.join(SERVER_DIR_PATH, 'file', f"uploaded_file.csv"))
-    df = df.fillna('')
-    return df.to_dict(orient='records')
-
-
 @charts_router.get('/get_unique_sprints')
 def get_unique_sprints():
-    
-    
+
     query = text("""
         SELECT DISTINCT sprint_name 
         FROM sprint
@@ -49,48 +41,77 @@ def get_unique_areas():
 @charts_router.get('/burn-down-chart')
 def get_burn_down_chart(sprint_name='Спринт 2023.1.1'):
     """
-    Диаграммы сгорания спринта
-    :param sprint_name:
-    :return:
+    :param sprint_name: Имя спринта для которого нужно построить диаграмму сгорания.
+    :return: Данные для диаграммы сгорания
     """
-    df = pd.read_csv(os.path.join(SERVER_DIR_PATH, 'file', f"uploaded_file.csv"))
+    sprint_query = text("""
+    SELECT sprint_name, sprint_end_date, entity_ids
+    FROM sprint
+    WHERE sprint_name = :sprint_name
+    """)
 
-    sprint_df = df[df['Имя спринта'] == sprint_name]
+    with engine.connect() as connection:
+        sprint_result = connection.execute(sprint_query, {'sprint_name': sprint_name}).fetchone()
 
-    sprint_df = sprint_df[sprint_df['Статус'] != 'Отменено']
+    if not sprint_result:
+        return {"error": "Sprint not found"}
 
-    total_estimated_time = sprint_df['Оценка (в секундах)'].sum()
+    sprint_end_date = sprint_result[1] 
+    entity_ids = sprint_result[2]       
 
-    daily_spent_time = sprint_df.groupby('Дата обновления')['Потраченное время'].sum().cumsum()
+    tasks_query = text("""
+        SELECT entity_id, ticket_number, name, estimation, create_date, due_date
+        FROM task
+        WHERE entity_id = ANY(:entity_ids) AND due_date <= :sprint_end_date
+    """)
+
+    with engine.connect() as connection:
+        tasks_result = connection.execute(tasks_query, {'entity_ids': entity_ids, 'sprint_end_date': sprint_end_date}).fetchall()
+
+    if not tasks_result:
+        return {"error": "No tasks found for this sprint"}
+
+    task_df = pd.DataFrame(tasks_result, columns=['entity_id', 'ticket_number', 'name', 'estimation', 'create_date', 'due_date'])
+
+    total_estimated_time = task_df['estimation'].sum()
+
+    history_query = text("""
+        SELECT entity_id, history_date, history_change
+        FROM history
+        WHERE entity_id = ANY(:entity_ids) AND history_property_name = 'Статус'
+    """)
+
+    with engine.connect() as connection:
+        history_result = connection.execute(history_query, {'entity_ids': entity_ids}).fetchall()
+
+    if not history_result:
+        return {"error": "No status history found for tasks in this sprint"}
+
+    history_df = pd.DataFrame(history_result, columns=['entity_id', 'history_date', 'history_change'])
+    history_df['history_date'] = pd.to_datetime(history_df['history_date'])
+    daily_spent_time = history_df.groupby('history_date').size().cumsum()
 
     daily_remaining_work = total_estimated_time - daily_spent_time
     daily_remaining_work = daily_remaining_work.reset_index()
     daily_remaining_work.columns = ['Дата', 'Оставшаяся работа (сек)']
     daily_remaining_work['Оставшаяся работа (часы)'] = daily_remaining_work['Оставшаяся работа (сек)'] / 3600
-    daily_remaining_work_dict = daily_remaining_work.to_dict()
 
-    return {'burn-down-chart': daily_remaining_work_dict}
+    full_date_range = pd.date_range(daily_remaining_work['Дата'].min(), daily_remaining_work['Дата'].max())
+    full_data = pd.DataFrame(full_date_range, columns=['Дата'])
 
+    daily_remaining_work = pd.merge(full_data, daily_remaining_work, on='Дата', how='left')
+    daily_remaining_work['Оставшаяся работа (сек)'].fillna(0, inplace=True)
+    daily_remaining_work['Оставшаяся работа (часы)'] = daily_remaining_work['Оставшаяся работа (сек)'] / 3600
+    daily_remaining_work_dict = daily_remaining_work.to_dict(orient='records')
+    df = pd.DataFrame(daily_remaining_work_dict)
+    df['Дата'] = pd.to_datetime(df['Дата'])
 
-@charts_router.get('/velocity')
-def get_velocity():
-    """
-    Скорость работы команды
-    :return:
-    """
-    df = pd.read_csv(os.path.join(SERVER_DIR_PATH, 'file', f"uploaded_file.csv"))
-    df_completed = df[df['Статус'] == 'Выполнено']
-    df_velocity = df_completed.groupby('Имя спринта')['Оценка (в секундах)'].sum().reset_index()
-    df_planned = df[df['Статус'] != 'Выполнено'].groupby('Имя спринта')['Оценка (в секундах)'].sum().reset_index()
+    result = {
+        "dates": df['Дата'].dt.strftime('%Y-%m-%d').tolist(), 
+        "remainingWork": df['Оставшаяся работа (часы)'].tolist() 
+    }
 
-    velocity_data = pd.merge(df_velocity, df_planned, on='Имя спринта', how='outer').fillna(0)
-
-    velocity_data['Оценка (в секундах)_x'] = velocity_data['Оценка (в секундах)_x'] / 3600  # Запланированное (в часах)
-    velocity_data['Оценка (в секундах)_y'] = velocity_data['Оценка (в секундах)_y'] / 3600  # Выполненное (в часах)
-
-    velocity_data_dict = velocity_data.to_dict(orient='records')
-
-    return {'velocity': velocity_data_dict}
+    return result
 
 @charts_router.get('/get_sprint_period')
 def get_sprint_period(sprint_name: str = String):

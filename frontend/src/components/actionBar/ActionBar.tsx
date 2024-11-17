@@ -13,15 +13,26 @@ type OptionType = {
     label: string;
 };
 
-const ActionBar = () => {
+type ActionBarProps = {
+    onSprintChange: (sprint: string[]) => void;
+};
+
+const ActionBar = ({ onSprintChange }: ActionBarProps) => {
     const [selectedFormats, setSelectedFormats] = useState<OptionType[]>([]);
+    const [selectedSprint, setSelectedSprint] = useState<OptionType[]>([]);
+    const [selectedArea, setSelectedArea] = useState<OptionType[]>([]);
     const [areas, setAreas] = useState<OptionType[]>([]);
+    const [selectedCharts, setSelectedCharts] = useState<OptionType[]>([]);
+    const [sprints, setSprints] = useState<OptionType[]>([]);
 
-    const {selectedAreas, setSelectedAreas, selectedSprints, setSelectedSprints} = useStore();
+    const { selectedAreas, setSelectedAreas, selectedSprints, setSelectedSprints } = useStore();
 
-    const sprints: OptionType[] = [
-        { value: "Sprint 1", label: "Sprint 1" },
-        { value: "Sprint 2", label: "Sprint 2" },
+    const chartTypes: OptionType[] = [
+        { value: "sprintHealth", label: "Здоровье спринта" },
+        { value: "burnDown", label: "Диаграмма сгорания спринта" },
+        { value: "circular", label: "Круговая диаграмма" },
+        { value: "ring", label: "Кольцевая диаграмма" },
+        { value: "bar", label: "Столбчатая диаграмма" },
     ];
 
     const documentTypes: OptionType[] = [
@@ -31,7 +42,7 @@ const ActionBar = () => {
     ];
 
     useEffect(() => {
-        const getUniqueAreas = async () => {
+        const fetchUniqueAreas = async () => {
             try {
                 const response = await fetch("http://localhost:8000/get_unique_areas");
                 const data = await response.json()
@@ -44,7 +55,22 @@ const ActionBar = () => {
                 console.error(e);
             }
         }
-        getUniqueAreas()
+
+        const fetchSprints = async () => {
+            try {
+                const response = await fetch('http://localhost:8000/get_unique_sprints');
+                const data = await response.json();
+                const sprintOptions = data.unique_sprints.map((name: string) => ({
+                    value: name,
+                    label: name
+                }));
+                setSprints(sprintOptions);
+            } catch (error) {
+                console.error("Ошибка при загрузке спринтов:", error);
+            }
+        };
+        fetchUniqueAreas()
+        fetchSprints()
     }, []);
 
     const handleExport = () => {
@@ -69,13 +95,43 @@ const ActionBar = () => {
         }
     };
 
+    const handleSprintSelect = (selected: OptionType[]) => {
+        setSelectedSprint(selected);
+        onSprintChange(selected.map((item) => item.value));
+    };
+    // const handleAddCharts = () => {
+    //     const newCharts = [...charts];
+    //     selectedCharts.forEach((chart) => {
+    //         switch (chart.value) {
+    //             case "sprintHealth":
+    //                 newCharts.push(<SprintHealthChart key="sprintHealth" />);
+    //                 break;
+    //             case "burnDown":
+    //                 newCharts.push(<BurnDownChart key="burnDown" />);
+    //                 break;
+    //             case "circular":
+    //                 newCharts.push(<CircularChart key="circular" />);
+    //                 break;
+    //             case "ring":
+    //                 newCharts.push(<RingChart key="ring" />);
+    //                 break;
+    //             case "bar":
+    //                 newCharts.push(<BarChart key="bar" />);
+    //                 break;
+    //             default:
+    //                 break;
+    //         }
+    //     });
+    //     setCharts(newCharts); // Обновляем состояние диаграмм
+    // };
+
     return (
         <div className={styles.actionBar}>
             <MultiSelect
                 className={styles.selector}
                 options={sprints}
-                value={selectedSprints}
-                onChange={setSelectedSprints}
+                value={selectedSprint}
+                onChange={handleSprintSelect}
                 labelledBy="Выберите спринт"
                 overrideStrings={{
                     selectSomeItems: "Выберите спринт",
@@ -85,8 +141,21 @@ const ActionBar = () => {
                 }}
             />
 
-            <button className="primary-button">+ диаграмма</button>
+            {/* <button className="primary-button" onClick={handleAddCharts}>+ диаграмма</button> */}
 
+            <MultiSelect
+                className={styles.selector}
+                options={chartTypes}
+                value={selectedCharts}
+                onChange={setSelectedCharts}
+                labelledBy="Выберите типы диаграмм"
+                overrideStrings={{
+                    selectSomeItems: "Выберите тип диаграммы",
+                    allItemsAreSelected: "Все типы выбраны",
+                    selectAll: "Выбрать все",
+                    clearAll: "Очистить выбор"
+                }}
+            />
             <div className={styles.export}>
                 <MultiSelect
                     className={styles.selector}
@@ -109,7 +178,6 @@ const ActionBar = () => {
                     Экспортировать
                 </button>
             </div>
-
             <MultiSelect
                 className={styles.selector}
                 options={areas}
@@ -123,7 +191,9 @@ const ActionBar = () => {
                     clearAll: "Очистить выбор"
                 }}
             />
+
             <button className={styles.resetButton}>Сбросить</button>
+
         </div>
     );
 };

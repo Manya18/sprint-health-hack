@@ -106,6 +106,30 @@ def upload_history_file(file: UploadFile = File(...)):
     df = df.rename(columns={"index": "id"})
     df['history_date'] = pd.to_datetime(df['history_date'])
 
+    status_translation = {
+        'inProgress': 'В работе',
+        'closed': 'Закрыто',
+        'testing': 'Тестирование',
+        'rejected': 'Отклонен исполнителем',
+        'fixing': 'Исправление',
+        'analysis': 'Анализ',
+        'created': 'Создано',
+        'done': 'Выполнено',
+        'deferred': 'Отложен',
+        'waiting': 'В ожидании',
+        'readyForDevelopment': 'Готово к разработке',
+        'st': 'СТ',
+        'confirmation': 'Подтверждение',
+        'development': 'Разработка',
+        'finished': 'СТ Завершено',
+        'localization': 'Локализация'
+    }
+
+    df['history_change'] = df['history_change'].str.split('->').str[0].str.strip()
+    df['history_change'] = df['history_change'].map(lambda x: status_translation.get(x.strip(), x.strip()))
+    
+    df.loc[df['history_property_name'] == 'status', 'history_property_name'] = 'Статус'
+
     dtype = {
         'entity_id': Integer,
         'history_property_name': String,
@@ -153,20 +177,6 @@ def upload_sprint_file(file: UploadFile = File(...)):
     buffer.close()
     file.file.close()
     return {'message': 'Файл успешно загружен в базу данных'}
-
-
-# @performance_router.get('/sprint/{sprint_name}')
-# def get_all_tasks_by_sprint_name(sprint_name: str):
-#     sprints = pd.read_csv(os.path.join(SERVER_DIR_PATH, 'file', f"sprints.csv"), skiprows=1, sep=';')
-#     data = pd.read_csv(os.path.join(SERVER_DIR_PATH, 'file', f"data.csv"), skiprows=1, sep=';')
-#
-#     res = data[data['entity_id'].isin(
-#         list(map(int, sprints.loc[sprints['sprint_name'] == sprint_name, 'entity_ids'].iloc[0].strip('{}').split(',')))
-#     )]
-#     res = res.fillna('')
-#
-#     return res.to_dict()
-
 
 @performance_router.post('/sprint/filtered/{sprint_name}')
 def get_filtered_tasks_by_sprint_name(sprint_name: str, filter_params: TaskFilteredParams):
