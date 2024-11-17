@@ -353,7 +353,17 @@ const Dashboard = ({ selectedSprint, chartsBase }: DashboardProps) => {
                     yAxisTitle: '',
                     title: 'Таблица бэклога',
                     gridPosition: { x: 0, y: 0, w: 11, h: 4 },
-                }
+                },
+                {
+                    id: '5',
+                    type: 'sprintHealth',
+                    data: keyIndicatorsData,
+                    name: '',
+                    xAxisTitle: '',
+                    yAxisTitle: '',
+                    title: '',
+                    gridPosition: { x: 4, y: 11, w: 6, h: 6 },
+                },
             ]);
         }
     };
@@ -378,7 +388,7 @@ const Dashboard = ({ selectedSprint, chartsBase }: DashboardProps) => {
     const renderChart = (chart: ChartData) => {
         switch (chart.type) {
             case 'sprintHealth':
-                const SprintHealthData = chart.data as SprintHealthChartType;
+                const SprintHealthData = chart.data as KeyIndicatorsType[];
                 return <SprintHealthChart data={SprintHealthData} sprintName={selectedSprint[0]} />;
             case 'burnDown':
                 const burnDownData = chart.data as BurnDownChartType;

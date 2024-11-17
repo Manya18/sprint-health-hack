@@ -3,12 +3,8 @@ export type BurnDownChartType = {
     remainingWork: number[];
 }
 export type SprintHealthChartType = {
-    toDo: number;
-    inProgress: number;
-    done: number;
-    removed: number;
-    backlogChange: number;
-    blocked: number;
+    label: string;
+    count: number[];
 }
 export type KeyIndicatorsType = {
     label: string;
@@ -22,3 +18,13 @@ export type sprintSuccessRateType = {
     resolution: string;
 }
 
+export type BacklogItem = {
+    history_date: Date;
+    task_count: number;
+    total_estimation: number;
+};
+
+export type BacklogTableType = {
+    tasks_added: BacklogItem[];
+    tasks_removed: BacklogItem[];
+};
