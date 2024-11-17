@@ -60,18 +60,10 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
     async function getToDoTasks(sprintNames: string[]) {
         if (sprintNames) {
             try {
-                const sprintNamesStr = sprintNames.join(',');
-                const areasStr = selectedAreas.length > 0 ? selectedAreas.join(',') : '';
-                const params: any = {
-                    sprint_names: sprintNamesStr,
-                };
-
-                if (areasStr) {
-                    params.areas = areasStr;
-                }
-                const response = await axios.get('http://localhost:8000/get_to_do_tasks', {
-                    params: params,
-                });
+                const areasStr = selectedAreas.length > 0 
+                ? selectedAreas.map(area => area.label).join('&areas=') 
+                : '';
+                const response = await axios.get(`http://localhost:8000/get_to_do_tasks?sprint_names=${sprintNames[0]}${areasStr === '' ? '' : '&areas=' + areasStr}`);
                 return response.data;
             } catch (error) {
                 console.error('Error fetching to do tasks:', error);
@@ -100,19 +92,10 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
     async function getInWorkTasks(sprintNames: string[]) {
         if (selectedSprint) {
             try {
-                const sprintNamesStr = sprintNames.join(',');
-                const areasStr = selectedAreas.length > 0 ? selectedAreas.join(',') : undefined;
-                const params: any = {
-                    sprint_names: sprintNamesStr,
-                };
-
-                if (areasStr) {
-                    params.areas = areasStr;
-                }
-
-                const response = await axios.get('http://localhost:8000/get_in_work_tasks', {
-                    params: params,
-                });
+                const areasStr = selectedAreas.length > 0 
+                    ? selectedAreas.map(area => area.label).join('&areas=') 
+                    : '';
+                const response = await axios.get(`http://localhost:8000/get_in_work_tasks?sprint_names=${sprintNames[0]}${areasStr === '' ? '' : '&areas=' + areasStr}`);
                 return response.data;
             } catch (error) {
                 console.error('Error fetching in work tasks:', error);
@@ -124,19 +107,10 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
     async function getCloseTasks(sprintNames: string[]) {
         if (sprintNames) {
             try {
-                const sprintNamesStr = sprintNames.join(',');
-                const areasStr = selectedAreas.length > 0 ? selectedAreas.join(',') : undefined;
-                const params: any = {
-                    sprint_names: sprintNamesStr,
-                };
-
-                if (areasStr) {
-                    params.areas = areasStr;
-                }
-
-                const response = await axios.get('http://localhost:8000/get_close_tasks', {
-                    params: params,
-                });
+                const areasStr = selectedAreas.length > 0 
+                    ? selectedAreas.map(area => area.label).join('&areas=') 
+                    : '';
+                const response = await axios.get(`http://localhost:8000/get_close_tasks?sprint_names=${sprintNames[0]}${areasStr === '' ? '' : '&areas=' + areasStr}`);
                 return response.data;
             } catch (error) {
                 console.error('Error fetching close tasks:', error);
@@ -148,19 +122,10 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
     async function getCancelTasks(sprintNames: string[]) {
         if (selectedSprint) {
             try {
-                const sprintNamesStr = sprintNames.join(',');
-                const areasStr = selectedAreas.length > 0 ? selectedAreas.join(',') : undefined;
-                const params: any = {
-                    sprint_names: sprintNamesStr,
-                };
-
-                if (areasStr) {
-                    params.areas = areasStr;
-                }
-
-                const response = await axios.get('http://localhost:8000/get_cancel_tasks', {
-                    params: params,
-                });
+                const areasStr = selectedAreas.length > 0 
+                    ? selectedAreas.map(area => area.label).join('&areas=') 
+                    : '';
+                const response = await axios.get(`http://localhost:8000/get_cancel_tasks?sprint_names=${sprintNames[0]}${areasStr === '' ? '' : '&areas=' + areasStr}`);
                 return response.data;
             } catch (error) {
                 console.error('Error fetching close tasks:', error);
