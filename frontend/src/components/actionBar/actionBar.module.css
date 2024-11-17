@@ -4,7 +4,7 @@
     background-color: #FFFFFF;
     display: flex;
     gap: 20px;
-    border-radius: 10px;
+    border-radius: 0 0 10px 10px ;
 }
 .resetButton{
     background-color: #ff6666;

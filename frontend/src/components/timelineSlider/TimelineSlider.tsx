@@ -43,7 +43,7 @@ const TimelineSlider = ({sprintNames}:{sprintNames: string[]}) => {
 
     return (
         <div className={styles.timelineSlider}>
-            <h2>Выберите период для анализа</h2>
+            <h2 className={styles.title}>Выберите период для анализа</h2>
             <div className={styles.wrapper}>
                 <div className={styles.sliderWrapper}>
                     <Slider

@@ -8,9 +8,18 @@ const SprintSuccessRate = ({ data, sprintName }: { data: any, sprintName: string
         <div className={styles.wrapper}>
             <h3 className={styles.title}>{data.resolution}</h3>
             <div className={styles.sprintSuccessRate}>
-                <GaugeChart id="gauge-chart1" percent={data.inImplementation} textColor="black" />
-                <GaugeChart id="gauge-chart1" percent={data.cancel} textColor="black" />
-                <GaugeChart id="gauge-chart1" percent={data.backlog} textColor="black" />
+                <div className={styles.chartWrapper}>
+                    <label>К выполнению</label>
+                    <GaugeChart id="gauge-chart1" percent={data.inImplementation/100} textColor="black" />
+                </div>
+                <div className={styles.chartWrapper}>
+                    <label>Снято</label>
+                    <GaugeChart id="gauge-chart1" percent={data.cancel/100} textColor="black" />
+                </div>
+                <div className={styles.chartWrapper}>
+                    <label>Изменения бэклога</label>
+                    <GaugeChart id="gauge-chart1" percent={data.backlog/100} textColor="black" />
+                </div>
             </div>
         </div>
     )

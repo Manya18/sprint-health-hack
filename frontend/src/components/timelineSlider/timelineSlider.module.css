@@ -8,6 +8,11 @@
     gap: 5px;
     border-radius: 10px;
 }
+.title{
+    margin: 0;
+    font-size: 20px;
+    text-align: center;
+}
 .wrapper{
     display: flex;
     flex-direction: column;

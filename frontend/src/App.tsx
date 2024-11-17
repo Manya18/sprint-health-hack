@@ -3,8 +3,8 @@ import "./App.css";
 import ActionBar from "./components/actionBar/ActionBar";
 import FilesUpload from "./components/filesUpload/FilesUpload";
 import Dashboard from "./components/dashboard/Dashboard";
-import SprintSuccessRate from "./components/charts/sprintSuccessRate/SprintSuccessRate";
 import TimelineSlider from "./components/timelineSlider/TimelineSlider";
+import BacklogTable from "./components/charts/backlogTable/BacklogTable";
 
 function App() {
   const [selectedSprints, setSelectedSprints] = useState<string[]>([]);
@@ -15,11 +15,18 @@ function App() {
 
   return (
     <div className="App">
+      <h1 className="App-title">SprintHealth</h1>
       <FilesUpload />
       <ActionBar onSprintChange={handleSprintChange} />
-      <TimelineSlider sprintNames={selectedSprints} />
-      <Dashboard selectedSprint={selectedSprints} />
-      {/* <SprintSuccessRate sprintName={selectedSprints[0]}/> */}
+      {selectedSprints[0] ? (
+        <>
+          <TimelineSlider sprintNames={selectedSprints} />
+          <Dashboard selectedSprint={selectedSprints} />
+          <BacklogTable sprintName={selectedSprints[0]} />
+        </>
+      ) : (
+        <div className="App-span">Выберите спринт для анализа</div>
+      )}
     </div>
   );
 }

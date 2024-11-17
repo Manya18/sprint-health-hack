@@ -1,6 +1,17 @@
 .App{
-    padding: 20px;
+    padding: 5px 20px;
     width: 100%;
     min-height: 100vh;
     background-color: #F0F0F0;
+}
+.App-title{
+    margin: 0;
+    margin-bottom: 10px;
+    font-size: 24px;
+    color: #332cbf;
+}
+.App-span{
+    font-size: 16px;
+    text-align: center;
+    margin-top: 10px;
 }
