@@ -4,7 +4,7 @@ import pandas as pd
 from db import engine
 import os
 from sqlalchemy import text
-
+from sqlalchemy import Integer, String, Float, DateTime, Date
 
 @charts_router.get('/data')
 def get_data():
@@ -91,3 +91,10 @@ def get_velocity():
     velocity_data_dict = velocity_data.to_dict(orient='records')
 
     return {'velocity': velocity_data_dict}
+
+@charts_router.get('/get_sprint_period')
+def get_sprint_period(sprint_name: str = String):
+    query = text(f"""SELECT json_agg(json_build_object('sprint_start_date', sprint_start_date, 'sprint_end_date', sprint_end_date)) FROM sprint WHERE sprint_name='{sprint_name}'""")
+    with engine.connect() as connection:
+        result = connection.execute(query).scalar()
+    return result

@@ -58,39 +58,59 @@ def get_in_work_tasks(
     areas: list[str] = Query([])
 ):
     result = []
-    sprint_names_str = ', '.join(f"'{name}'" for name in sprint_names)
-    query = text(f"""
+
+    sprint_names_placeholder = ', '.join([f":sprint_name_{i}" for i in range(len(sprint_names))])
+    sprint_params = {f"sprint_name_{i}": name for i, name in enumerate(sprint_names)}
+
+    sprint_query = text(f"""
         SELECT json_agg(json_build_object('entity_ids', entity_ids, 'sprint_name', sprint_name)) AS result
-    FROM sprint
-    WHERE sprint_name IN ({sprint_names_str})
+        FROM sprint
+        WHERE sprint_name IN ({sprint_names_placeholder})
     """)
 
     areas_condition = ""
     if areas:
-        areas_str = ', '.join(f"'{area}'" for area in areas)
-        areas_condition = f"AND area IN ({areas_str})"
+        areas_placeholder = ', '.join([f":area_{i}" for i in range(len(areas))])
+        areas_condition = f"AND area IN ({areas_placeholder})"
+
+    area_params = {f"area_{i}": area for i, area in enumerate(areas)}
+
+    params = {**sprint_params, **area_params}
 
     with engine.connect() as connection:
-        entity_ids = connection.execute(query).scalar()
+        try:
+            sprint_data = connection.execute(sprint_query, params).scalar()
 
-    for item in entity_ids:
-        entity_ids_list = item['entity_ids']
-        entity_ids_str = ', '.join(map(str, entity_ids_list))
-        
-        query = text(f"""
-            SELECT SUM(estimation) FROM task_duplicate
-            WHERE entity_id IN ({entity_ids_str}) AND status NOT IN ('Сделано', 'Снято') {areas_condition}
-        """)
-        
-        with engine.connect() as connection:
-            estimation = connection.execute(query).scalar()
+            if sprint_data:
+                for item in sprint_data:
+                    entity_ids_list = item['entity_ids']
+                    if not entity_ids_list:
+                        continue
+                    
+                    entity_ids_placeholder = ', '.join([f":entity_id_{i}" for i in range(len(entity_ids_list))])
+                    entity_id_params = {f"entity_id_{i}": entity_id for i, entity_id in enumerate(entity_ids_list)}
 
-        result.append({
-            'sprint_name': item['sprint_name'],
-            'estimation': round(estimation / 3600, 1) if estimation is not None else 0
-        })
+                    estimation_query = text(f"""
+                        SELECT SUM(estimation) 
+                        FROM task_duplicate
+                        WHERE entity_id IN ({entity_ids_placeholder}) 
+                          AND status NOT IN ('Сделано', 'Снято') 
+                          {areas_condition}
+                    """)
+
+                    estimation_params = {**entity_id_params, **area_params}
+                    estimation = connection.execute(estimation_query, estimation_params).scalar()
+
+                    result.append({
+                        'sprint_name': item['sprint_name'],
+                        'estimation': round(estimation / 3600, 1) if estimation else 0
+                    })
+        except Exception as e:
+            print(f"Error fetching tasks: {e}")
+            return {"status": "error", "message": str(e)}
 
     return result
+
 
 
 
@@ -176,20 +196,19 @@ def get_cancel_tasks(
     
     return result
 
-@digital_values_router.post('/update_task_duplicate')
+@digital_values_router.put('/update_task_duplicate')
 def update_task_duplicate(
     sprint_names: list[str] = Query(...), 
     start_date: str = String,          
     end_date: str = String,            
     timeline: str = String
 ):
-    sprint_names_str = ', '.join(f"'{name}'" for name in sprint_names)
+    sprint_names_placeholder = ', '.join([f":sprint_name_{i}" for i in range(len(sprint_names))])
+    sprint_params = {f"sprint_name_{i}": name for i, name in enumerate(sprint_names)}
 
-    query = text(f"""DELETE FROM task_duplicate""")
-    with engine.connect() as connection:
-        connection.execute(query)
+    delete_query = text("DELETE FROM task_duplicate;")
 
-    query = text(f"""
+    main_query = text(f"""
         WITH task_status_history AS (
             SELECT
                 h.entity_id,
@@ -199,7 +218,7 @@ def update_task_duplicate(
                 ROW_NUMBER() OVER (PARTITION BY h.entity_id ORDER BY h.history_date DESC) AS row_num
             FROM history h
             WHERE h.history_property_name = 'Статус'
-              AND h.history_date BETWEEN '{start_date}'::date AND '{end_date}'::date
+              AND h.history_date BETWEEN :start_date AND :end_date
         ),
         sprint_tasks AS (
             SELECT
@@ -207,8 +226,8 @@ def update_task_duplicate(
                 s.sprint_status,
                 s.entity_ids
             FROM sprint s
-            WHERE s.sprint_name IN ({sprint_names_str})   -- Используем IN для передачи нескольких значений
-              AND s.sprint_end_date >= '{timeline}'::date
+            WHERE s.sprint_name IN ({sprint_names_placeholder})
+              AND s.sprint_end_date >= :timeline
         ),
         task_info AS (
             SELECT
@@ -241,7 +260,6 @@ def update_task_duplicate(
                 ON t.entity_id = th.entity_id
                 AND th.row_num = 1
         )
-
         INSERT INTO task_duplicate (
             entity_id,
             area,
@@ -290,15 +308,36 @@ def update_task_duplicate(
         FROM sprint_tasks st
         LEFT JOIN task_info ti
             ON ti.entity_id = ANY(st.entity_ids)
-        WHERE st.sprint_name IN ({sprint_names_str})  -- Используем IN для нескольких значений
-          AND ti.due_date <= '{end_date}'::date
+        WHERE st.sprint_name IN ({sprint_names_placeholder})
+          AND ti.due_date <= :end_date
+          AND ti.create_date <= :timeline
         ORDER BY ti.entity_id;
     """)
 
-    with engine.connect() as connection:
-        connection.execute(query)
+    params = {
+        **sprint_params,
+        "start_date": start_date,
+        "end_date": end_date,
+        "timeline": timeline
+    }
 
-    return {"status": "success", "message": "Tasks inserted into task_duplicate"}
+    with engine.connect() as connection:
+        transaction = connection.begin()
+        try:
+            delete_result = connection.execute(delete_query)
+            print(f"Rows affected by DELETE: {delete_result.rowcount}")
+
+            insert_result = connection.execute(main_query, params)
+            print(f"Rows affected by INSERT: {insert_result.rowcount}")
+
+            transaction.commit()
+            return {"status": "success", "message": "Tasks inserted into task_duplicate"}
+        except Exception as e:
+            transaction.rollback()
+            print(f"Error during transaction: {e}")
+            return {"status": "error", "message": str(e)}
+
+
 
 
 @digital_values_router.get('/get_completion_rate')
