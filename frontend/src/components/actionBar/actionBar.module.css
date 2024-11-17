@@ -4,7 +4,7 @@
     background-color: #FFFFFF;
     display: flex;
     gap: 20px;
-    border-radius: 0 0 10px 10px ;
+    border-radius: 10px;
 }
 .resetButton{
     background-color: #ff6666;
@@ -17,6 +17,7 @@
 }
 .selector{
     width: 200px;
+    max-height: 38px;
 }
 
 .export {
