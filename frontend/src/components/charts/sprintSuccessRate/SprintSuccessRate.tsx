@@ -12,22 +12,27 @@ const SprintSuccessRate = ({sprintName, areas}: {sprintName: string, areas?: str
 
     useEffect(() => {
         const getSuccessParams = async () => {
-            try {
-                const response = await fetch(`http://localhost:8000/success_rate_parameters?sprint_names=${sprintName}`);
-                const data = await response.json()
-                setInImplementation(data.in_implementation_percentage[0].estimation);
-                setCancel(data.cancel_percentage[0].estimation);
-            } catch (e) {
-                console.error(e);
+            if(sprintName){
+                try {
+                    const response = await fetch(`http://localhost:8000/success_rate_parameters?sprint_names=${sprintName}`);
+                    const data = await response.json()
+                    setInImplementation(data.in_implementation_percentage[0].estimation);
+                    setCancel(data.cancel_percentage[0].estimation)
+                } catch (e) {
+                    console.error(e);
+                }
             }
         }
         const getBacklog = async () => {
-            try {
-                const response = await fetch(`http://localhost:8000/backlog_changes_persentage?sprint_names=${sprintName}`);
-                const data = await response.json()
-                setBacklog(data)
-            } catch (e) {
-                console.error(e);
+            if(sprintName){
+                try {
+                    const response = await fetch(`http://localhost:8000/backlog_changes_persentage?sprint_names=${sprintName}`);
+                    const data = await response.json()
+                    setBacklog(data)
+                    console.log(data)
+                } catch (e) {
+                    console.error(e);
+                }
             }
         }
         getSuccessParams()
@@ -42,7 +47,7 @@ const SprintSuccessRate = ({sprintName, areas}: {sprintName: string, areas?: str
         } else {
             setResolution("Резолюция не определена");
         }
-    }, [inImplementation, cancel, backlog]);
+    }, [sprintName, inImplementation, cancel, backlog]);
 
     return(
         <div className={styles.wrapper}>

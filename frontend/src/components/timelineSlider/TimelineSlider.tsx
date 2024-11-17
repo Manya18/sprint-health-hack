@@ -11,14 +11,16 @@ const TimelineSlider = ({sprintNames}:{sprintNames: string[]}) => {
     
     useEffect(() => {
         const getDates = async () => {
-            try {
-                const response = await fetch(`http://localhost:8000/get_sprint_period?sprint_name=${sprintNames[0]}`);
-                const data = await response.json();
-                setTimelineEnd(new Date(data.sprint_end_date));
-                setStartDate(new Date(data.sprint_start_date));
-                setEndDate(new Date(data.sprint_end_date));
-            } catch (e) {
-                console.error(e);
+            if(sprintNames){
+                try {
+                    const response = await fetch(`http://localhost:8000/get_sprint_period?sprint_name=${sprintNames[0]}`);
+                    const data = await response.json();
+                    setTimelineEnd(new Date(data.sprint_end_date));
+                    setStartDate(new Date(data.sprint_start_date));
+                    setEndDate(new Date(data.sprint_end_date));
+                } catch (e) {
+                    console.error(e);
+                }
             }
         };
         getDates();

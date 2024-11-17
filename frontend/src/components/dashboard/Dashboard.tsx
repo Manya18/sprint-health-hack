@@ -51,119 +51,169 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
     const [clipboard, setClipboard] = useState<ChartData | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [charts, setCharts] = useState<ChartData[]>([]);
-    const areas: any[] = [];
+    const [startDate, setStartDate] = useState('')
+    const [endDate, setEndDate] = useState('')
 
-    async function getToDoTasks(sprintNames: string[], areas: any[] = []) {
-        try {
-            const sprintNamesStr = sprintNames.join(',');
-            const areasStr = areas.length > 0 ? areas.join(',') : undefined;
-            const params: any = {
-                sprint_names: sprintNamesStr,
-            };
+    const { timelineEnd, selectedAreas } = useStore();
 
-            if (areasStr) {
-                params.areas = areasStr;
-            }
-            const response = await axios.get('http://localhost:8000/get_to_do_tasks', {
-                params: params,
-            });
-            return response.data;
-        } catch (error) {
-            console.error('Error fetching to do tasks:', error);
-            return [];
-        }
-    }
-    async function getInWorkTasks(sprintNames: string[], areas: any[] = []) {
-        try {
-            const sprintNamesStr = sprintNames.join(',');
-            const areasStr = areas.length > 0 ? areas.join(',') : undefined;
-            const params: any = {
-                sprint_names: sprintNamesStr,
-            };
+    async function getToDoTasks(sprintNames: string[]) {
+        if(sprintNames){
+            try {
+                const sprintNamesStr = sprintNames.join(',');
+                const areasStr = selectedAreas.length > 0 ? selectedAreas.join(',') : '';
+                const params: any = {
+                    sprint_names: sprintNamesStr,
+                };
 
-            if (areasStr) {
-                params.areas = areasStr;
-            }
-
-            const response = await axios.get('http://localhost:8000/get_in_work_tasks', {
-                params: params,
-            });
-            return response.data;
-        } catch (error) {
-            console.error('Error fetching in work tasks:', error);
-            return [];
-        }
-    }
-
-    async function getCloseTasks(sprintNames: string[], areas: any[] = []) {
-        try {
-            const sprintNamesStr = sprintNames.join(',');
-            const areasStr = areas.length > 0 ? areas.join(',') : undefined;
-            const params: any = {
-                sprint_names: sprintNamesStr,
-            };
-
-            if (areasStr) {
-                params.areas = areasStr;
-            }
-
-            const response = await axios.get('http://localhost:8000/get_close_tasks', {
-                params: params,
-            });
-            return response.data;
-        } catch (error) {
-            console.error('Error fetching close tasks:', error);
-            return [];
-        }
-    }
-
-    async function getCancelTasks(sprintNames: string[], areas: any[] = []) {
-        try {
-            const sprintNamesStr = sprintNames.join(',');
-            const areasStr = areas.length > 0 ? areas.join(',') : undefined;
-            const params: any = {
-                sprint_names: sprintNamesStr,
-            };
-
-            if (areasStr) {
-                params.areas = areasStr;
-            }
-
-            const response = await axios.get('http://localhost:8000/get_cancel_tasks', {
-                params: params,
-            });
-            return response.data;
-        } catch (error) {
-            console.error('Error fetching close tasks:', error);
-            return [];
-        }
-    }
-
-    const updateTaskDuplicate = async ({ selectedSprint, startDate, endDate, timeline }: UpdateTaskDuplicateParams) => {
-        try {
-            const finalTimeline = timeline || endDate;
-
-            const params = new URLSearchParams({
-                sprint_names: selectedSprint[0],
-                start_date: startDate,
-                end_date: endDate,
-                timeline: finalTimeline,
-            });
-
-            const response = await axios.put(`http://localhost:8000/update_task_duplicate?${params.toString()}`);
-
-            if (response.status === 200) {
-                fetchChartData(selectedSprint);
+                if (areasStr) {
+                    params.areas = areasStr;
+                }
+                const response = await axios.get('http://localhost:8000/get_to_do_tasks', {
+                    params: params,
+                });
                 return response.data;
+            } catch (error) {
+                console.error('Error fetching to do tasks:', error);
+                return [];
             }
-        } catch (error) {
-            console.error('Ошибка запроса:', error);
+        }
+    }
+
+    useEffect(() => {
+        const getDates = async (sprintNames: string[]) => {
+            if(sprintNames[0]){
+                try {
+                    const response = await fetch(`http://localhost:8000/get_sprint_period?sprint_name=${sprintNames[0]}`);
+                    const data = await response.json();
+                    setStartDate((new Date(data.sprint_start_date)).toISOString().split('T')[0]);
+                    setEndDate((new Date(data.sprint_end_date)).toISOString().split('T')[0]);
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        };
+        getDates(selectedSprint)
+    }, [selectedSprint, selectedAreas])
+        
+
+    async function getInWorkTasks(sprintNames: string[]) {
+        if(selectedSprint){
+            try {
+                const sprintNamesStr = sprintNames.join(',');
+                const areasStr = selectedAreas.length > 0 ? selectedAreas.join(',') : undefined;
+                const params: any = {
+                    sprint_names: sprintNamesStr,
+                };
+
+                if (areasStr) {
+                    params.areas = areasStr;
+                }
+
+                const response = await axios.get('http://localhost:8000/get_in_work_tasks', {
+                    params: params,
+                });
+                return response.data;
+            } catch (error) {
+                console.error('Error fetching in work tasks:', error);
+                return [];
+            }
+        }
+    }
+
+    async function getCloseTasks(sprintNames: string[]) {
+        if(sprintNames){
+            try {
+                const sprintNamesStr = sprintNames.join(',');
+                const areasStr = selectedAreas.length > 0 ? selectedAreas.join(',') : undefined;
+                const params: any = {
+                    sprint_names: sprintNamesStr,
+                };
+
+                if (areasStr) {
+                    params.areas = areasStr;
+                }
+
+                const response = await axios.get('http://localhost:8000/get_close_tasks', {
+                    params: params,
+                });
+                return response.data;
+            } catch (error) {
+                console.error('Error fetching close tasks:', error);
+                return [];
+            }
+        }
+    }
+
+    async function getCancelTasks(sprintNames: string[]) {
+        if(selectedSprint){
+            try {
+                const sprintNamesStr = sprintNames.join(',');
+                const areasStr = selectedAreas.length > 0 ? selectedAreas.join(',') : undefined;
+                const params: any = {
+                    sprint_names: sprintNamesStr,
+                };
+
+                if (areasStr) {
+                    params.areas = areasStr;
+                }
+
+                const response = await axios.get('http://localhost:8000/get_cancel_tasks', {
+                    params: params,
+                });
+                return response.data;
+            } catch (error) {
+                console.error('Error fetching close tasks:', error);
+                return [];
+            }
+        }
+    }
+
+    const updateTaskDuplicate = async ({ selectedSprint }: UpdateTaskDuplicateParams) => {
+        if(selectedSprint){
+            try {
+                const finalTimeline = timelineEnd.toISOString().split('T')[0] || endDate;
+
+                const params = new URLSearchParams({
+                    sprint_names: selectedSprint[0],
+                    start_date: startDate,
+                    end_date: endDate,
+                    timeline: finalTimeline,
+                });
+
+                const response = await axios.put(`http://localhost:8000/update_task_duplicate?${params.toString()}`);
+
+                if (response.status === 200) {
+                    fetchChartData(selectedSprint);
+                    return response.data;
+                }
+            } catch (error) {
+                console.error('Ошибка запроса:', error);
+            }
         }
     };
+    async function getBacklog(sprintNames: string[]) {
+        if(sprintNames[0]){
+            try {
+                const sprintNamesStr = sprintNames.join(',');
+                const areasStr = selectedAreas.length > 0 ? selectedAreas.join(',') : undefined;
+                const params: any = {
+                    sprint_names: sprintNamesStr,
+                };
 
-    const startDate = "2024-07-17";
-    const endDate = "2024-07-30";
-    const timeline = "2024-07-30";
+                if (areasStr) {
+                    params.areas = areasStr;
+                }
+
+                const response = await axios.get('http://localhost:8000/backlog_changes_persentage', {
+                    params: params,
+                });
+                return response.data;
+            } catch (error) {
+                console.error('Error fetching close tasks:', error);
+                return [];
+            }
+        }
+    }
 
     const [burnDownData, setBurnDownData] = useState<{ dates: string[]; remainingWork: number[] }>({
         dates: [],
@@ -171,23 +221,23 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
     });
 
     const fetchBurnDownData = async (selectedSprint: string[]) => {
-        try {
-
-            const data = await Promise.all(
-                selectedSprint.map(async (sprintName) => {
-                    const response = await axios.get(
-                        `http://localhost:8000/burn-down-chart?sprint_name=${selectedSprint[0]}`
-                    );
-                    return response.data || { dates: [], remainingWork: [] };
-                })
-            );
-
-            const dates = data.flatMap((d) => d.dates || []);
-            const remainingWork = data.flatMap((d) => d.remainingWork || []);
-            console.log('dsds', dates, remainingWork)
-            return { dates, remainingWork };
-        } catch (error) {
-            return { dates: [], remainingWork: [] };
+        if(selectedSprint){
+            try {
+                const data = await Promise.all(
+                    selectedSprint.map(async (sprintName) => {
+                        const response = await axios.get(
+                            `http://localhost:8000/burn-down-chart?sprint_name=${selectedSprint[0]}`
+                        );
+                        return response.data || { dates: [], remainingWork: [] };
+                    })
+                );
+    
+                const dates = data.flatMap((d) => d.dates || []);
+                const remainingWork = data.flatMap((d) => d.remainingWork || []);
+                return { dates, remainingWork };
+            } catch (error) {
+                return { dates: [], remainingWork: [] };
+            }
         }
     };
 
@@ -195,63 +245,67 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
         const loadBurnDownData = async () => {
             if (selectedSprint && selectedSprint.length > 0) {
                 const data = await fetchBurnDownData(selectedSprint);
-                setBurnDownData(data);
+                if(data) setBurnDownData(data);
             }
         };
 
         loadBurnDownData();
-    }, [selectedSprint]);
+    }, [selectedSprint, selectedAreas]);
 
     const fetchChartData = async (sprintNames: string[]) => {
+        if(sprintNames){
+            const [toDo, inWork, closed, canceled, backlog] = await Promise.all([
+                getToDoTasks(sprintNames),
+                getInWorkTasks(sprintNames),
+                getCloseTasks(sprintNames),
+                getCancelTasks(sprintNames),
+                getBacklog(sprintNames),
+            ]);
 
-        const [toDo, inWork, closed, canceled] = await Promise.all([
-            getToDoTasks(sprintNames, areas),
-            getInWorkTasks(sprintNames, areas),
-            getCloseTasks(sprintNames, areas),
-            getCancelTasks(sprintNames, areas),
-        ]);
+            const toDoEstimations = toDo.map((task: { estimation: any; }) => task.estimation);
+            const inWorkEstimations = inWork.map((task: { estimation: any; }) => task.estimation);
+            const doneEstimations = closed.map((task: { estimation: any; }) => task.estimation);
+            const canceledEstimations = canceled.map((task: { estimation: any; }) => task.estimation);
 
-        const toDoEstimations = toDo.map((task: { estimation: any; }) => task.estimation);
-        const inWorkEstimations = inWork.map((task: { estimation: any; }) => task.estimation);
-        const doneEstimations = closed.map((task: { estimation: any; }) => task.estimation);
-        const canceledEstimations = canceled.map((task: { estimation: any; }) => task.estimation);
+            console.log('oo', backlog)
+            const keyIndicatorsData: KeyIndicatorsType[] = [
+                { label: 'К выполнению', count: toDoEstimations },
+                { label: 'В работе', count: inWorkEstimations },
+                { label: 'Сделано', count: doneEstimations },
+                { label: 'Снято', count: canceledEstimations },
+                { label: 'Бэклог изменен с начала спринта на', count: backlog ??  '' },
+            ];
 
-        const keyIndicatorsData: KeyIndicatorsType[] = [
-            { label: 'К выполнению', count: toDoEstimations },
-            { label: 'В работе', count: inWorkEstimations },
-            { label: 'Сделано', count: doneEstimations },
-            { label: 'Снято', count: canceledEstimations },
-            { label: 'Бэклог изменен с начала спринта на', count: 5 }, // запрос
-        ];
+            const burnDownData = await fetchBurnDownData(sprintNames);
 
-        const burnDownData = await fetchBurnDownData(sprintNames);
-
-        console.log("burnDownData", burnDownData)
-        setCharts([
-            {
-                id: '1',
-                type: 'keyIndicators',
-                data: keyIndicatorsData,
-                name: 'Основные показатели',
-                xAxisTitle: '',
-                yAxisTitle: '',
-                title: '',
-                gridPosition: { x: 0, y: 0, w: 6, h: 4 },
-            },
-            {
-                id: '2',
-                type: 'burnDown',
-                data: burnDownData,
-                name: 'Диаграмма сгорания',
-                xAxisTitle: 'Дата',
-                yAxisTitle: 'Оставшаяся работа (часы)',
-                title: 'Диаграмма сгорания',
-                gridPosition: { x: 6, y: 0, w: 5, h: 8 },
-            },
-        ]);
+            setCharts([
+                {
+                    id: '1',
+                    type: 'keyIndicators',
+                    data: keyIndicatorsData,
+                    name: 'Основные показатели',
+                    xAxisTitle: '',
+                    yAxisTitle: '',
+                    title: '',
+                    gridPosition: { x: 0, y: 0, w: 6, h: 4 },
+                },
+                {
+                    id: '2',
+                    type: 'burnDown',
+                    data: burnDownData!,
+                    name: 'Диаграмма сгорания',
+                    xAxisTitle: 'Дата',
+                    yAxisTitle: 'Оставшаяся работа (часы)',
+                    title: 'Диаграмма сгорания',
+                    gridPosition: { x: 6, y: 0, w: 5, h: 8 },
+                },
+            ]);
+        }
     };
 
     useEffect(() => {
+        const timeline = timelineEnd.toISOString().split('T')[0];
+        console.log(timeline)
         updateTaskDuplicate({
             selectedSprint,
             startDate,
@@ -263,7 +317,7 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
         }
         fetchBurnDownData(selectedSprint)
 
-    }, [selectedSprint, startDate, endDate, timeline]);
+    }, [selectedSprint, startDate, endDate, timelineEnd, selectedAreas]);
 
 
     const renderChart = (chart: ChartData) => {

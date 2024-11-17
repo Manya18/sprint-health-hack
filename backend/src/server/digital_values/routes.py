@@ -573,6 +573,7 @@ def backlog_changes_persentage(
             task['total_estimation'] for task in tasks_added 
             if sprint_start_date.date() <= task['history_date'] < first_three_days[2] and task['total_estimation'] is not None
         )
+        print(total_before_sprint_start, total_during_sprint)
     else:
         total_before_sprint_start = 0
         total_during_sprint = 0
