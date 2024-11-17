@@ -342,7 +342,7 @@ const Dashboard = ({ selectedSprint, chartsBase }: DashboardProps) => {
                     xAxisTitle: '',
                     yAxisTitle: '',
                     title: 'Оценка здоровья спринта',
-                    gridPosition: { x: 0, y: 10, w: 4, h: 6 },
+                    gridPosition: { x: 0, y: 10, w: 4, h: 6.5 },
                 },
                 {
                     id: '4',
@@ -362,7 +362,7 @@ const Dashboard = ({ selectedSprint, chartsBase }: DashboardProps) => {
                     xAxisTitle: '',
                     yAxisTitle: '',
                     title: '',
-                    gridPosition: { x: 4, y: 11, w: 6, h: 6 },
+                    gridPosition: { x: 4, y: 11, w: 6.5, h: 4 },
                 },
             ]);
         }
@@ -708,12 +708,12 @@ const Dashboard = ({ selectedSprint, chartsBase }: DashboardProps) => {
                                 >
                                     Копировать
                                 </button>
-                                <button
+                                {/* <button
                                     className='menuButton'
                                     onClick={() => handleEditClick(contextMenuDaschboard.chartId)}
                                 >
                                     Изменить
-                                </button>
+                                </button> */}
                             </div>
                         </div>
                     </Modal>
