@@ -3,6 +3,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { MultiSelect } from "react-multi-select-component";
 import { exportAllChartsToPDF, exportAllChartsToDOCX, exportAllChartsToPPTX } from "../../logic/exportFunction";
 import { useStore } from "../../logic/useStore";
+import { MenuItem, Select } from "@mui/material";
 
 interface ChartData {
     id: string;
@@ -14,7 +15,6 @@ interface ChartData {
     title: string;
     gridPosition: { x: number; y: number; w: number; h: number };
 }
-
 type OptionType = {
     value: string;
     label: string;
@@ -28,8 +28,7 @@ type ActionBarProps = {
 
 const ActionBar = ({ onSprintChange, setCharts }: ActionBarProps) => {
     const [selectedFormats, setSelectedFormats] = useState<OptionType[]>([]);
-    const [selectedSprint, setSelectedSprint] = useState<OptionType[]>([]);
-    const [selectedArea, setSelectedArea] = useState<OptionType[]>([]);
+    const [selectedSprint, setSelectedSprint] = useState<OptionType | null>(null);
     const [areas, setAreas] = useState<OptionType[]>([]);
     const [selectedCharts, setSelectedCharts] = useState<OptionType[]>([]);
     const [sprints, setSprints] = useState<OptionType[]>([]);
@@ -105,9 +104,12 @@ const ActionBar = ({ onSprintChange, setCharts }: ActionBarProps) => {
         }
     };
 
-    const handleSprintSelect = (selected: OptionType[]) => {
-        setSelectedSprint(selected);
-        onSprintChange(selected.map((item) => item.value));
+    const handleSprintSelect = (selected: any) => {
+        const selectedSpr = sprints.find(el => el.value === selected.target.value);
+        if(selectedSpr){
+            setSelectedSprint(selectedSpr);
+            onSprintChange([selectedSpr.value]);    
+        }
     };
 
     const handleAddCharts = () => {
@@ -189,19 +191,22 @@ const ActionBar = ({ onSprintChange, setCharts }: ActionBarProps) => {
 
     return (
         <div className={styles.actionBar}>
-            <MultiSelect
+            <Select
                 className={styles.selector}
-                options={sprints}
-                value={selectedSprint}
+                labelId="select-label"
+                value={selectedSprint?.value || ''}
                 onChange={handleSprintSelect}
-                labelledBy="Выберите спринт"
-                overrideStrings={{
-                    selectSomeItems: "Выберите спринт",
-                    allItemsAreSelected: "Все спринты выбраны",
-                    selectAll: "Выбрать все",
-                    clearAll: "Очистить выбор"
-                }}
-            />
+                displayEmpty
+            >
+                <MenuItem value="" disabled>
+                    Выберите спринт
+                </MenuItem>
+                {sprints.map(sprint => (
+                    <MenuItem key={sprint.value} value={sprint.value}>
+                        {sprint.value}
+                    </MenuItem>
+                ))}
+            </Select>
 
             <MultiSelect
                 className={styles.selector}

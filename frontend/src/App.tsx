@@ -21,6 +21,7 @@ function App() {
   const [charts, setCharts] = useState<ChartData[]>([]);
 
   const handleSprintChange = (sprints: string[]) => {
+    console.log(sprints)
     setSelectedSprints(sprints);
   };
 

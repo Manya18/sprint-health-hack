@@ -261,9 +261,9 @@ const Dashboard = ({ selectedSprint, chartsBase }: DashboardProps) => {
 
     console.log(inImplementation, cancel, backlog)
     useEffect(() => {
-        if (inImplementation <= 0.2 && cancel <= 0.1 && backlog <= 0.2) {
+        if (inImplementation / 100 <= 0.2 && cancel / 100 <= 0.1 && backlog / 100 <= 0.2) {
             setResolution("Спринт успешен!");
-        } else if (inImplementation > 0.8 && cancel > 0.9 && backlog > 0.8) {
+        } else if (inImplementation > 0.8 && cancel > 0.9 && backlog > 0.6) {
             setResolution("Спринт неуспешен");
         } else {
             setResolution("Резолюция не определена");
@@ -322,7 +322,7 @@ const Dashboard = ({ selectedSprint, chartsBase }: DashboardProps) => {
                     xAxisTitle: '',
                     yAxisTitle: '',
                     title: '',
-                    gridPosition: { x: 4, y: 11, w: 6, h: 6 },
+                    gridPosition: { x: 4, y: 11, w: 6.5, h: 2.5 },
                 },
                 {
                     id: '2',
@@ -332,7 +332,7 @@ const Dashboard = ({ selectedSprint, chartsBase }: DashboardProps) => {
                     xAxisTitle: 'Дата',
                     yAxisTitle: 'Оставшаяся работа (часы)',
                     title: 'Диаграмма сгорания',
-                    gridPosition: { x: 6, y: 20, w: 5, h: 8 },
+                    gridPosition: { x: 0, y: 20, w: 5, h: 8 },
                 },
                 {
                     id: '3',
@@ -342,7 +342,7 @@ const Dashboard = ({ selectedSprint, chartsBase }: DashboardProps) => {
                     xAxisTitle: '',
                     yAxisTitle: '',
                     title: 'Оценка здоровья спринта',
-                    gridPosition: { x: 0, y: 10, w: 4, h: 6 },
+                    gridPosition: { x: 0, y: 10, w: 4, h: 6.5 },
                 },
                 {
                     id: '4',
@@ -352,7 +352,7 @@ const Dashboard = ({ selectedSprint, chartsBase }: DashboardProps) => {
                     xAxisTitle: '',
                     yAxisTitle: '',
                     title: 'Таблица бэклога',
-                    gridPosition: { x: 0, y: 0, w: 11, h: 4 },
+                    gridPosition: { x: 0, y: 0, w: 10.5, h: 4 },
                 },
                 {
                     id: '5',
@@ -362,7 +362,7 @@ const Dashboard = ({ selectedSprint, chartsBase }: DashboardProps) => {
                     xAxisTitle: '',
                     yAxisTitle: '',
                     title: '',
-                    gridPosition: { x: 4, y: 11, w: 6, h: 6 },
+                    gridPosition: { x: 4, y: 11, w: 6.5, h: 4 },
                 },
             ]);
         }
@@ -370,7 +370,6 @@ const Dashboard = ({ selectedSprint, chartsBase }: DashboardProps) => {
 
     useEffect(() => {
         const timeline = timelineEnd.toISOString().split('T')[0];
-        console.log(timeline)
         updateTaskDuplicate({
             selectedSprint,
             startDate,
@@ -709,12 +708,12 @@ const Dashboard = ({ selectedSprint, chartsBase }: DashboardProps) => {
                                 >
                                     Копировать
                                 </button>
-                                <button
+                                {/* <button
                                     className='menuButton'
                                     onClick={() => handleEditClick(contextMenuDaschboard.chartId)}
                                 >
                                     Изменить
-                                </button>
+                                </button> */}
                             </div>
                         </div>
                     </Modal>
