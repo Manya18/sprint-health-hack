@@ -467,7 +467,7 @@ def backlog_table(
         FROM 
             history h
         JOIN 
-            task t ON h.entity_id = t.entity_id
+            task_duplicate t ON h.entity_id = t.entity_id
         WHERE 
             h.history_property_name = 'Задача' 
             AND h.history_change_type = 'CREATED'
@@ -491,7 +491,7 @@ def backlog_table(
         FROM 
             history h
         JOIN 
-            task t ON h.entity_id = t.entity_id
+            task_duplicate t ON h.entity_id = t.entity_id
         WHERE 
             h.history_property_name = 'Задача' 
             AND h.entity_id IN ({entity_ids_str})
@@ -579,3 +579,62 @@ def backlog_changes_persentage(
         total_during_sprint = 0
 
     return round(total_during_sprint  / total_before_sprint_start * 100, 2)
+
+
+@digital_values_router.get('/mass_transfer')
+def mass_transfer(
+    sprint_names: list[str] = Query(...),
+    areas: list[str] = Query([])
+):
+    result = []
+    sprint_names_str = ', '.join(f"'{name}'" for name in sprint_names)
+    query = text(f"""
+        SELECT json_agg(json_build_object('entity_ids', entity_ids, 'sprint_name', sprint_name, 'sprint_start_date', sprint_start_date, 
+                                           'sprint_end_date', sprint_end_date)) AS result
+        FROM sprint
+        WHERE sprint_name IN ({sprint_names_str})
+        """)
+
+    areas_condition = ""
+    if areas:
+        areas_str = ', '.join(f"'{area}'" for area in areas)
+        areas_condition = f"AND area IN ({areas_str})"
+
+    with engine.connect() as connection:
+        entity_ids = connection.execute(query).scalar()
+        entity_ids_data = [item for item in entity_ids] if entity_ids else []
+
+    if not entity_ids_data:
+        return {"message": "No entity_ids found."}
+
+    start_dates = [item['sprint_start_date'] for item in entity_ids_data]
+    end_dates = [item['sprint_end_date'] for item in entity_ids_data]
+
+    for item in entity_ids:
+        entity_ids_list = item['entity_ids']
+        entity_ids_str = ', '.join(map(str, entity_ids_list))        
+        
+        query = text(f"""
+            SELECT COUNT(*) AS total_count
+                FROM public.history h
+                JOIN public.task_duplicate t ON h.entity_id = t.entity_id
+
+                where
+                    h.entity_id IN ({entity_ids_str})
+                    AND h.after='closed'
+                    AND DATE(h.history_date) = DATE('{end_dates[0]}')  -- Фильтрация по дате начала
+                    AND DATE(h.history_date) < DATE('{end_dates[0]}') + INTERVAL '1 day'
+                    AND (t.type = 'Дефект'
+                    or t.type = 'Задача'
+                    or t.type = 'История' )
+                    {areas_condition};
+                """)
+        print(query)
+        with engine.connect() as connection:
+            estimation = connection.execute(query).scalar()
+
+        result.append({
+            'sprint_name': item['sprint_name'],
+            'estimation': round(estimation / 3600, 1) if estimation is not None else 0
+        })
+    return 0

@@ -118,4 +118,4 @@ def get_sprint_period(sprint_name: str = String):
     query = text(f"""SELECT json_agg(json_build_object('sprint_start_date', sprint_start_date, 'sprint_end_date', sprint_end_date)) FROM sprint WHERE sprint_name='{sprint_name}'""")
     with engine.connect() as connection:
         result = connection.execute(query).scalar()
-    return result
+    return result[0]

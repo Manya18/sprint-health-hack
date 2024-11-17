@@ -1,10 +1,28 @@
-import { useState } from "react"; 
+import { useEffect, useState } from "react"; 
 import styles from "./timelineSlider.module.css"; 
 import { Slider, Typography } from "@mui/material";
+import { useStore } from "../../logic/useStore";
 
-const TimelineSlider = () => { 
-    const startDate = new Date(2024, 0, 1); 
-    const endDate = new Date(2024, 0, 15);
+const TimelineSlider = ({sprintNames}:{sprintNames: string[]}) => { 
+    const [startDate, setStartDate] = useState<Date>(new Date(2024, 0, 1))
+    const [endDate, setEndDate] = useState<Date>(new Date(2024, 0, 15))
+
+    const { setTimelineEnd } = useStore();
+    
+    useEffect(() => {
+        const getDates = async () => {
+            try {
+                const response = await fetch(`http://localhost:8000/get_sprint_period?sprint_name=${sprintNames[0]}`);
+                const data = await response.json()
+                setTimelineEnd(new Date(data.sprint_end_date))
+                setStartDate(new Date(data.sprint_start_date))
+                setEndDate(new Date(data.sprint_end_date))
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        getDates()
+    }, [sprintNames]);
     
     const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     
@@ -15,14 +33,7 @@ const TimelineSlider = () => {
     };
 
     const handleChange = (event: any, newValue: any) => {
-        setValue(newValue);
-    };
-
-    const handleInputChange = (index: number, event: any) => {
-        const newDate = new Date(event.target.value);
-        const newDays = Math.floor((newDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-        const newValue = [...value];
-        newValue[index] = newDays;
+        setTimelineEnd(getDateFromDays(newValue[1]))
         setValue(newValue);
     };
 
@@ -30,24 +41,6 @@ const TimelineSlider = () => {
         <div className={styles.timelineSlider}>
             <h2>Выберите период для анализа</h2>
             <div className={styles.wrapper}>
-                <div className={styles.inputsWrapper}>
-                    <div className={styles.inputWrapper}>
-                        <label>Дата от которой</label>
-                        <input 
-                            type="date" 
-                            value={getDateFromDays(value[0] + 1).toISOString().split('T')[0]} 
-                            onChange={(event) => handleInputChange(0, event)}
-                        />
-                    </div>
-                    <div className={styles.inputWrapper}>
-                        <label>Дата до которой</label>
-                        <input 
-                            type="date" 
-                            value={getDateFromDays(value[1] + 1).toISOString().split('T')[0]}
-                            onChange={(event) => handleInputChange(1, event)}
-                        />
-                    </div>
-                </div>
                 <div className={styles.sliderWrapper}>
                     <Slider
                         value={value}
