@@ -13,28 +13,30 @@ const TimelineSlider = ({sprintNames}:{sprintNames: string[]}) => {
         const getDates = async () => {
             try {
                 const response = await fetch(`http://localhost:8000/get_sprint_period?sprint_name=${sprintNames[0]}`);
-                const data = await response.json()
-                setTimelineEnd(new Date(data.sprint_end_date))
-                setStartDate(new Date(data.sprint_start_date))
-                setEndDate(new Date(data.sprint_end_date))
+                const data = await response.json();
+                setTimelineEnd(new Date(data.sprint_end_date));
+                setStartDate(new Date(data.sprint_start_date));
+                setEndDate(new Date(data.sprint_end_date));
             } catch (e) {
                 console.error(e);
             }
-        }
-        getDates()
-    }, [sprintNames]);
+        };
+        getDates();
+    }, [sprintNames, setTimelineEnd]);
     
     const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     
-    const [value, setValue] = useState([0, totalDays]);
+    const [value, setValue] = useState<number>(totalDays);
 
     const getDateFromDays = (days: number) => {
         return new Date(startDate.getTime() + (days * 1000 * 60 * 60 * 24));
     };
 
-    const handleChange = (event: any, newValue: any) => {
-        setTimelineEnd(getDateFromDays(newValue[1]))
-        setValue(newValue);
+    const handleChange = (event: Event, newValue: number | number[]) => {
+        if (typeof newValue === 'number') {
+            setValue(newValue);
+            setTimelineEnd(getDateFromDays(newValue));
+        }
     };
 
     return (
