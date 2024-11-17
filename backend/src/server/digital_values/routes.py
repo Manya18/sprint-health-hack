@@ -57,39 +57,59 @@ def get_in_work_tasks(
     areas: list[str] = Query([])
 ):
     result = []
-    sprint_names_str = ', '.join(f"'{name}'" for name in sprint_names)
-    query = text(f"""
+
+    sprint_names_placeholder = ', '.join([f":sprint_name_{i}" for i in range(len(sprint_names))])
+    sprint_params = {f"sprint_name_{i}": name for i, name in enumerate(sprint_names)}
+
+    sprint_query = text(f"""
         SELECT json_agg(json_build_object('entity_ids', entity_ids, 'sprint_name', sprint_name)) AS result
-    FROM sprint
-    WHERE sprint_name IN ({sprint_names_str})
+        FROM sprint
+        WHERE sprint_name IN ({sprint_names_placeholder})
     """)
 
     areas_condition = ""
     if areas:
-        areas_str = ', '.join(f"'{area}'" for area in areas)
-        areas_condition = f"AND area IN ({areas_str})"
+        areas_placeholder = ', '.join([f":area_{i}" for i in range(len(areas))])
+        areas_condition = f"AND area IN ({areas_placeholder})"
+
+    area_params = {f"area_{i}": area for i, area in enumerate(areas)}
+
+    params = {**sprint_params, **area_params}
 
     with engine.connect() as connection:
-        entity_ids = connection.execute(query).scalar()
+        try:
+            sprint_data = connection.execute(sprint_query, params).scalar()
 
-    for item in entity_ids:
-        entity_ids_list = item['entity_ids']
-        entity_ids_str = ', '.join(map(str, entity_ids_list))
-        
-        query = text(f"""
-            SELECT SUM(estimation) FROM task_duplicate
-            WHERE entity_id IN ({entity_ids_str}) AND status NOT IN ('Сделано', 'Снято') {areas_condition}
-        """)
-        
-        with engine.connect() as connection:
-            estimation = connection.execute(query).scalar()
+            if sprint_data:
+                for item in sprint_data:
+                    entity_ids_list = item['entity_ids']
+                    if not entity_ids_list:
+                        continue
+                    
+                    entity_ids_placeholder = ', '.join([f":entity_id_{i}" for i in range(len(entity_ids_list))])
+                    entity_id_params = {f"entity_id_{i}": entity_id for i, entity_id in enumerate(entity_ids_list)}
 
-        result.append({
-            'sprint_name': item['sprint_name'],
-            'estimation': round(estimation / 3600, 1) if estimation is not None else 0
-        })
+                    estimation_query = text(f"""
+                        SELECT SUM(estimation) 
+                        FROM task_duplicate
+                        WHERE entity_id IN ({entity_ids_placeholder}) 
+                          AND status NOT IN ('Сделано', 'Снято') 
+                          {areas_condition}
+                    """)
+
+                    estimation_params = {**entity_id_params, **area_params}
+                    estimation = connection.execute(estimation_query, estimation_params).scalar()
+
+                    result.append({
+                        'sprint_name': item['sprint_name'],
+                        'estimation': round(estimation / 3600, 1) if estimation else 0
+                    })
+        except Exception as e:
+            print(f"Error fetching tasks: {e}")
+            return {"status": "error", "message": str(e)}
 
     return result
+
 
 
 
