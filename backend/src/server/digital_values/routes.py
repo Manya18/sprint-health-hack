@@ -398,7 +398,7 @@ def success_rate_parameters(
         all_estimation = all_estimations[i]['estimation']
 
         if all_estimation > 0:
-            estimation_ratio = to_do_estimation / all_estimation * 100
+            estimation_ratio = to_do_estimation / all_estimation
         else:
             estimation_ratio = 0
 
@@ -413,7 +413,7 @@ def success_rate_parameters(
         all_estimation = all_estimations[i]['estimation']
 
         if all_estimation > 0:
-            cancel_ratio = cancel_estimation / all_estimation * 100
+            cancel_ratio = cancel_estimation / all_estimation
         else:
             cancel_ratio = 0
 

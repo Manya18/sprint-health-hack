@@ -15,8 +15,8 @@ const SprintSuccessRate = ({sprintName, areas}: {sprintName: string, areas?: str
             try {
                 const response = await fetch(`http://localhost:8000/success_rate_parameters?sprint_names=${sprintName}`);
                 const data = await response.json()
-                setInImplementation(data.in_implementation_percentage);
-                setCancel(data.cancel_percentage)
+                setInImplementation(data.in_implementation_percentage[0].estimation);
+                setCancel(data.cancel_percentage[0].estimation);
             } catch (e) {
                 console.error(e);
             }
@@ -32,12 +32,12 @@ const SprintSuccessRate = ({sprintName, areas}: {sprintName: string, areas?: str
         }
         getSuccessParams()
         getBacklog()
-    }, []);
+    }, [sprintName]);
 
     useEffect(() => {
-        if (inImplementation <= 0.2 && cancel <= 0.1 && backlog <= 0.2) {
+        if (inImplementation <= 20 && cancel <= 10 && backlog <= 20) {
             setResolution("Спринт успешен!");
-        } else if (inImplementation > 0.8 && cancel > 0.9 && backlog > 0.8) {
+        } else if (inImplementation > 80 && cancel > 90 && backlog > 80) {
             setResolution("Спринт неуспешен");
         } else {
             setResolution("Резолюция не определена");
@@ -48,8 +48,8 @@ const SprintSuccessRate = ({sprintName, areas}: {sprintName: string, areas?: str
         <div className={styles.wrapper}>
             <h3 className={styles.title}>{resolution}</h3>
             <div className={styles.sprintSuccessRate}>
-                <GaugeChart id="gauge-chart1" percent={inImplementation * 100} textColor="black" />
-                <GaugeChart id="gauge-chart1" percent={cancel * 100} textColor="black" />
+                <GaugeChart id="gauge-chart1" percent={inImplementation} textColor="black" />
+                <GaugeChart id="gauge-chart1" percent={cancel} textColor="black" />
                 <GaugeChart id="gauge-chart1" percent={backlog} textColor="black" />
             </div>
         </div>
