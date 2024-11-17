@@ -35,9 +35,9 @@ const SprintSuccessRate = ({sprintName, areas}: {sprintName: string, areas?: str
     }, [sprintName]);
 
     useEffect(() => {
-        if (inImplementation <= 20 && cancel <= 10 && backlog <= 20) {
+        if (inImplementation <= 0.2 && cancel <= 0.1 && backlog <= 0.2) {
             setResolution("Спринт успешен!");
-        } else if (inImplementation > 80 && cancel > 90 && backlog > 80) {
+        } else if (inImplementation > 0.8 && cancel > 0.9 && backlog > 0.8) {
             setResolution("Спринт неуспешен");
         } else {
             setResolution("Резолюция не определена");
