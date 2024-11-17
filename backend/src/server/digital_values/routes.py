@@ -309,7 +309,6 @@ def update_task_duplicate(
         LEFT JOIN task_info ti
             ON ti.entity_id = ANY(st.entity_ids)
         WHERE st.sprint_name IN ({sprint_names_placeholder})
-          AND ti.due_date <= :end_date
           AND ti.create_date <= :timeline
         ORDER BY ti.entity_id;
     """)
