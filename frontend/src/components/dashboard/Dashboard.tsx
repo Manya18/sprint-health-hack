@@ -16,6 +16,7 @@ import BurnDownChart from '../charts/burnDown/BurnDownChart';
 import { BurnDownChartType, KeyIndicatorsType, SprintHealthChartType } from '../../types/chartsTypes';
 import KeyIndicators from '../charts/keyIndicators/KeyIndicators';
 import { useStore } from '../../logic/useStore';
+import axios from 'axios';
 
 ChartJS.register(...registerables);
 
@@ -30,71 +31,257 @@ interface ChartData {
     gridPosition: { x: number; y: number; w: number; h: number };
 }
 
-const Dashboard: React.FC = () => {
+interface UpdateTaskDuplicateParams {
+    selectedSprint: string[];
+    startDate: string;
+    endDate: string;
+    timeline?: string;
+};
+
+interface DashboardProps {
+    selectedSprint: string[];
+};
+
+const Dashboard = ({ selectedSprint }: DashboardProps) => {
     const [isModalContext, setIsModalContext] = useState(false);
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; chartId: string } | null>(null);
     const [contextMenuDaschboard, setContextMenuDaschboard] = useState<{ x: number; y: number; chartId: string } | null>(null);
     const [pasteMenu, setPasteMenu] = useState<{ x: number; y: number } | null>(null);
     const [diagramName, setDiagramName] = useState('');
     const [clipboard, setClipboard] = useState<ChartData | null>(null);
-
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [charts, setCharts] = useState<ChartData[]>([]);
+    const areas: any[] = [];
 
-    const [charts, setCharts] = useState<ChartData[]>([
-        {
-            id: "1",
-            type: 'sprintHealth',
-            data: { toDo: 10, inProgress: 20, done: 30, removed: 5, backlogChange: 5.3, blocked: 0 },
-            name: 'Здоровье спринта',
-            xAxisTitle: '',
-            yAxisTitle: '',
-            title: '',
-            gridPosition: { x: 0, y: 0, w: 6, h: 5 },
-        },
-        {
-            id: "2",
-            type: 'burnDown',
-            data: { dates: ["2024-11-01", "2024-11-02"], remainingWork: [50, 40] },
-            name: 'Диаграмма сгорания',
-            xAxisTitle: '',
-            yAxisTitle: '',
-            title: '',
-            gridPosition: { x: 15, y: 20, w: 6, h: 8 },
-        },
-        {
-            id: "3",
-            type: 'keyIndicators',
-            data: [
-                {label: "К выполнению", count: 35},
-                {label: "В работе", count: 35},
-                {label: "Сделано", count: 35},
-                {label: "Снято", count: 35},
-                {label: "Бэклог изменен с начала спринта на", count: 35},
-            ],
-            name: 'Диаграмма сгорания',
-            xAxisTitle: '',
-            yAxisTitle: '',
-            title: '',
-            gridPosition: { x: 15, y: 20, w: 8, h: 4 },
-        },
-    ]);
+    async function getToDoTasks(sprintNames: string[], areas: any[] = []) {
+        try {
+            const sprintNamesStr = sprintNames.join(',');
+            const areasStr = areas.length > 0 ? areas.join(',') : undefined;
+            const params: any = {
+                sprint_names: sprintNamesStr,
+            };
+
+            if (areasStr) {
+                params.areas = areasStr;
+            }
+            const response = await axios.get('http://localhost:8000/get_to_do_tasks', {
+                params: params,
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching to do tasks:', error);
+            return [];
+        }
+    }
+    async function getInWorkTasks(sprintNames: string[], areas: any[] = []) {
+        try {
+            const sprintNamesStr = sprintNames.join(',');
+            const areasStr = areas.length > 0 ? areas.join(',') : undefined;
+            const params: any = {
+                sprint_names: sprintNamesStr,
+            };
+
+            if (areasStr) {
+                params.areas = areasStr;
+            }
+
+            const response = await axios.get('http://localhost:8000/get_in_work_tasks', {
+                params: params,
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching in work tasks:', error);
+            return [];
+        }
+    }
+
+    async function getCloseTasks(sprintNames: string[], areas: any[] = []) {
+        try {
+            const sprintNamesStr = sprintNames.join(',');
+            const areasStr = areas.length > 0 ? areas.join(',') : undefined;
+            const params: any = {
+                sprint_names: sprintNamesStr,
+            };
+
+            if (areasStr) {
+                params.areas = areasStr;
+            }
+
+            const response = await axios.get('http://localhost:8000/get_close_tasks', {
+                params: params,
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching close tasks:', error);
+            return [];
+        }
+    }
+
+    async function getCancelTasks(sprintNames: string[], areas: any[] = []) {
+        try {
+            const sprintNamesStr = sprintNames.join(',');
+            const areasStr = areas.length > 0 ? areas.join(',') : undefined;
+            const params: any = {
+                sprint_names: sprintNamesStr,
+            };
+
+            if (areasStr) {
+                params.areas = areasStr;
+            }
+
+            const response = await axios.get('http://localhost:8000/get_cancel_tasks', {
+                params: params,
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching close tasks:', error);
+            return [];
+        }
+    }
+
+    const updateTaskDuplicate = async ({ selectedSprint, startDate, endDate, timeline }: UpdateTaskDuplicateParams) => {
+        try {
+            const finalTimeline = timeline || endDate;
+
+            const params = new URLSearchParams({
+                sprint_names: selectedSprint[0],
+                start_date: startDate,
+                end_date: endDate,
+                timeline: finalTimeline,
+            });
+
+            const response = await axios.put(`http://localhost:8000/update_task_duplicate?${params.toString()}`);
+
+            if (response.status === 200) {
+                fetchChartData(selectedSprint);
+                return response.data;
+            }
+        } catch (error) {
+            console.error('Ошибка запроса:', error);
+        }
+    };
+
+    const startDate = "2024-07-17";
+    const endDate = "2024-07-30";
+    const timeline = "2024-07-30";
+
+    const [burnDownData, setBurnDownData] = useState<{ dates: string[]; remainingWork: number[] }>({
+        dates: [],
+        remainingWork: [],
+    });
+
+    const fetchBurnDownData = async (selectedSprint: string[]) => {
+        try {
+
+            const data = await Promise.all(
+                selectedSprint.map(async (sprintName) => {
+                    const response = await axios.get(
+                        `http://localhost:8000/burn-down-chart?sprint_name=${selectedSprint[0]}`
+                    );
+                    return response.data || { dates: [], remainingWork: [] };
+                })
+            );
+
+            const dates = data.flatMap((d) => d.dates || []);
+            const remainingWork = data.flatMap((d) => d.remainingWork || []);
+            console.log('dsds', dates, remainingWork)
+            return { dates, remainingWork };
+        } catch (error) {
+            return { dates: [], remainingWork: [] };
+        }
+    };
+
+    useEffect(() => {
+        const loadBurnDownData = async () => {
+            if (selectedSprint && selectedSprint.length > 0) {
+                const data = await fetchBurnDownData(selectedSprint);
+                setBurnDownData(data);
+            }
+        };
+
+        loadBurnDownData();
+    }, [selectedSprint]);
+
+    const fetchChartData = async (sprintNames: string[]) => {
+
+        const [toDo, inWork, closed, canceled] = await Promise.all([
+            getToDoTasks(sprintNames, areas),
+            getInWorkTasks(sprintNames, areas),
+            getCloseTasks(sprintNames, areas),
+            getCancelTasks(sprintNames, areas),
+        ]);
+
+        const toDoEstimations = toDo.map((task: { estimation: any; }) => task.estimation);
+        const inWorkEstimations = inWork.map((task: { estimation: any; }) => task.estimation);
+        const doneEstimations = closed.map((task: { estimation: any; }) => task.estimation);
+        const canceledEstimations = canceled.map((task: { estimation: any; }) => task.estimation);
+
+        const keyIndicatorsData: KeyIndicatorsType[] = [
+            { label: 'К выполнению', count: toDoEstimations },
+            { label: 'В работе', count: inWorkEstimations },
+            { label: 'Сделано', count: doneEstimations },
+            { label: 'Снято', count: canceledEstimations },
+            { label: 'Бэклог изменен с начала спринта на', count: 5 }, // запрос
+        ];
+
+        const burnDownData = await fetchBurnDownData(sprintNames);
+
+        console.log("burnDownData", burnDownData)
+        setCharts([
+            {
+                id: '1',
+                type: 'keyIndicators',
+                data: keyIndicatorsData,
+                name: 'Основные показатели',
+                xAxisTitle: '',
+                yAxisTitle: '',
+                title: '',
+                gridPosition: { x: 0, y: 0, w: 6, h: 4 },
+            },
+            {
+                id: '2',
+                type: 'burnDown',
+                data: burnDownData,
+                name: 'Диаграмма сгорания',
+                xAxisTitle: 'Дата',
+                yAxisTitle: 'Оставшаяся работа (часы)',
+                title: 'Диаграмма сгорания',
+                gridPosition: { x: 6, y: 0, w: 5, h: 8 },
+            },
+        ]);
+    };
+
+    useEffect(() => {
+        updateTaskDuplicate({
+            selectedSprint,
+            startDate,
+            endDate,
+            timeline,
+        });
+        if (selectedSprint && selectedSprint.length > 0) {
+            fetchChartData(selectedSprint);
+        }
+        fetchBurnDownData(selectedSprint)
+
+    }, [selectedSprint, startDate, endDate, timeline]);
+
 
     const renderChart = (chart: ChartData) => {
         switch (chart.type) {
             case 'sprintHealth':
                 const SprintHealthData = chart.data as SprintHealthChartType;
-                return <SprintHealthChart data={SprintHealthData} sprintName="Спринт 1" />;
+                return <SprintHealthChart data={SprintHealthData} sprintName={selectedSprint[0]} />;
             case 'burnDown':
                 const burnDownData = chart.data as BurnDownChartType;
                 return <BurnDownChart
                     data={burnDownData}
-                    sprintName="Спринт 1"
+                    sprintName={selectedSprint[0]}
                 />;
             case 'keyIndicators':
                 const keyIndicates = chart.data as KeyIndicatorsType[];
                 return <KeyIndicators
                     data={keyIndicates}
-                    sprintName="Спринт 1"
+                    sprintName={selectedSprint[0]}
                 />;
             default:
                 return null;
@@ -199,7 +386,7 @@ const Dashboard: React.FC = () => {
                 setPasteMenu({ x: e.clientX, y: e.clientY });
             }}
         >
-            <GridLayout className="layout dashboard-container" cols={12} rowHeight={40} width={1200}>
+            <GridLayout className="layout dashboard-container" cols={12} rowHeight={40} width={1600} isDraggable={false} isResizable={false}>
                 {charts.map((chart, index) => (
                     <div
                         key={chart.id}
@@ -211,11 +398,11 @@ const Dashboard: React.FC = () => {
                             w: chart.gridPosition.w,
                             h: chart.gridPosition.h,
                         }}
-                        onContextMenu={(e) => handleChartContextMenu(e, chart.id)}
+                    // onContextMenu={(e) => handleChartContextMenu(e, chart.id)}
                     >
-                        <div className={'dragHandle drag-icon'}>
+                        {/* <div className={'dragHandle drag-icon'}>
                             <DragIndicatorIcon />
-                        </div>
+                        </div> */}
                         <div className="chart-container">
                             <div className="chart">{renderChart(chart)}</div>
                         </div>
@@ -329,4 +516,3 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
-
