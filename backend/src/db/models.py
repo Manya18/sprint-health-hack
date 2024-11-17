@@ -70,3 +70,5 @@ class History(Base):
     history_version = Column(Float)
     history_change_type = Column(String)
     history_change = Column(String)
+    before = Column(String)
+    after = Column(String)

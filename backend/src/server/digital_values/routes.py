@@ -10,6 +10,7 @@ import os
 from fastapi import APIRouter, Query
 from sqlalchemy.dialects.postgresql import ARRAY
 from . import digital_values_router
+from datetime import datetime, timedelta
 
 @digital_values_router.get('/get_to_do_tasks')
 def get_to_do_tasks(
@@ -188,7 +189,6 @@ def update_task_duplicate(
     with engine.connect() as connection:
         connection.execute(query)
 
-    # Подготовка запроса
     query = text(f"""
         WITH task_status_history AS (
             SELECT
@@ -328,7 +328,7 @@ def get_completion_rate(
         entity_ids_str = ', '.join(map(str, entity_ids_list))        
         
         query = text(f"""
-            SELECT SUM(estimation) FROM Task
+            SELECT SUM(estimation) FROM task_duplicate
             WHERE entity_id IN ({entity_ids_str}) {areas_condition}
         """)
         
@@ -388,3 +388,155 @@ def success_rate_parameters(
         "in_implementation_percentage": in_implementation_percentage,
         "cancel_percentage": cancel_percentage
     }
+
+@digital_values_router.get('/backlog_table')
+def backlog_table(
+    sprint_names: list[str] = Query(...),
+    areas: list[str] = Query([])
+):
+    query = text(f"""
+        SELECT json_agg(json_build_object('entity_ids', entity_ids, 'sprint_name', sprint_name, 
+                                           'sprint_start_date', sprint_start_date, 
+                                           'sprint_end_date', sprint_end_date)) AS result
+        FROM sprint
+        WHERE sprint_name IN ({', '.join(f"'{name}'" for name in sprint_names)})
+        """)
+
+    areas_condition = ""
+    if areas:
+        areas_str = ', '.join(f"'{area}'" for area in areas)
+        areas_condition = f"AND area IN ({areas_str})"
+
+    with engine.connect() as connection:
+        entity_ids_result = connection.execute(query).scalar()
+        entity_ids_data = [item for item in entity_ids_result] if entity_ids_result else []
+
+    if not entity_ids_data:
+        return {"message": "No entity_ids found."}
+
+    entity_ids = [item['entity_ids'] for item in entity_ids_data]
+    start_dates = [item['sprint_start_date'] for item in entity_ids_data]
+    end_dates = [item['sprint_end_date'] for item in entity_ids_data]
+
+    entity_ids_str = ', '.join(map(str, entity_ids))[1:-1]
+
+    estimation__query = text(f"""
+        SELECT 
+            DATE(h.history_date) AS history_date, 
+            COUNT(*) AS task_count, 
+            COALESCE(SUM(t.estimation), 0) AS total_estimation
+        FROM 
+            history h
+        JOIN 
+            task t ON h.entity_id = t.entity_id
+        WHERE 
+            h.history_property_name = 'Задача' 
+            AND h.history_change_type = 'CREATED'
+            AND h.entity_id IN ({entity_ids_str})
+            AND h.history_date BETWEEN '{min(start_dates)}' AND '{max(end_dates)}'
+            AND t.type != 'Дефект'
+            OR (h.after = '{sprint_names[0]}' 
+            AND h.history_date <= '{max(end_dates)}'
+            AND t.type != 'Дефект')
+        GROUP BY 
+            DATE(h.history_date)
+        ORDER BY 
+            DATE(h.history_date); 
+        """)
+
+    removal_query = text(f"""
+        SELECT 
+            DATE(h.history_date) AS history_date, 
+            COUNT(*) AS task_count, 
+            COALESCE(SUM(t.estimation), 0) AS total_estimation
+        FROM 
+            history h
+        JOIN 
+            task t ON h.entity_id = t.entity_id
+        WHERE 
+            h.history_property_name = 'Задача' 
+            AND h.entity_id IN ({entity_ids_str})
+            AND h.history_date BETWEEN '{min(start_dates)}' AND '{max(end_dates)}'
+            AND t.type != 'Дефект'
+            AND h.before = '{sprint_names[0]}'
+        GROUP BY 
+            DATE(h.history_date)
+        ORDER BY 
+            DATE(h.history_date); 
+        """)
+    
+    with engine.connect() as connection:
+        estimation_results = connection.execute(estimation__query).fetchall()
+        removal_results = connection.execute(removal_query).fetchall()
+
+    return {
+        "tasks_added": [
+            {
+                "history_date": row.history_date,
+                "task_count": row.task_count,
+                "total_estimation": row.total_estimation
+            } for row in estimation_results
+        ],
+        "tasks_removed": [
+            {
+                "history_date": row.history_date,
+                "task_count": row.task_count,
+                "total_estimation": row.total_estimation
+            } for row in removal_results
+        ]
+    }
+
+@digital_values_router.get('/backlog_changes_persentage')
+def backlog_changes_persentage(
+    sprint_names: list[str] = Query(...),
+    areas: list[str] = Query([])
+):
+    query = text(f"""
+        SELECT json_agg(json_build_object('sprint_start_date', sprint_start_date, 
+                                           'sprint_end_date', sprint_end_date)) AS result
+        FROM sprint
+        WHERE sprint_name IN ({', '.join(f"'{name}'" for name in sprint_names)})
+        """)
+
+    areas_condition = ""
+    if areas:
+        areas_str = ', '.join(f"'{area}'" for area in areas)
+        areas_condition = f"AND area IN ({areas_str})"
+
+    with engine.connect() as connection:
+        entity_ids_result = connection.execute(query).scalar()
+        entity_ids_data = [item for item in entity_ids_result] if entity_ids_result else []
+
+    if not entity_ids_data:
+        return {"message": "No entity_ids found."}
+
+    start_dates = [item['sprint_start_date'] for item in entity_ids_data]
+    end_dates = [item['sprint_end_date'] for item in entity_ids_data]
+
+    backlog = backlog_table(sprint_names, areas)
+    tasks_added = backlog['tasks_added']
+
+    tasks_added.sort(key=lambda x: x['history_date'])
+
+    if start_dates:
+        first_date = datetime.strptime(start_dates[0], "%Y-%m-%dT%H:%M:%S")
+        sprint_start_date = first_date
+        sprint_end_date = datetime.strptime(end_dates[0], "%Y-%m-%dT%H:%M:%S")
+
+        first_three_days = [sprint_start_date + timedelta(days=i) for i in range(3)]
+        first_three_days = [date.date() for date in first_three_days]
+
+        total_before_sprint_start = sum(
+            task['total_estimation'] for task in tasks_added 
+            if task['history_date'] < sprint_start_date.date() and task['total_estimation'] is not None
+        )
+
+        total_during_sprint = sum(
+            task['total_estimation'] for task in tasks_added 
+            if sprint_start_date.date() <= task['history_date'] < first_three_days[2] and task['total_estimation'] is not None
+        )
+    else:
+        total_before_sprint_start = 0
+        total_during_sprint = 0
+
+    return round(total_during_sprint  / total_before_sprint_start * 100, 2)
