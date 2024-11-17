@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { Chart as ChartJS, registerables } from 'chart.js';
@@ -13,18 +15,21 @@ import { v4 as uuidv4 } from 'uuid';
 import SprintHealthChart from '../charts/sprintHealth/SprintHealthChart';
 import './DashboardChartStyles.css';
 import BurnDownChart from '../charts/burnDown/BurnDownChart';
-import { BurnDownChartType, KeyIndicatorsType, SprintHealthChartType, sprintSuccessRateType } from '../../types/chartsTypes';
+import { BacklogTableType, BurnDownChartType, KeyIndicatorsType, SprintHealthChartType, sprintSuccessRateType } from '../../types/chartsTypes';
 import KeyIndicators from '../charts/keyIndicators/KeyIndicators';
 import { useStore } from '../../logic/useStore';
 import axios from 'axios';
 import SprintSuccessRate from '../charts/sprintSuccessRate/SprintSuccessRate';
+import BacklogTable from '../charts/backlogTable/BacklogTable';
 
 ChartJS.register(...registerables);
-
+type CircularData = { [key: string]: number };
+type RingData = { [key: string]: number };
+type BarData = { [key: string]: number };
 interface ChartData {
     id: string;
     type: string;
-    data: SprintHealthChartType | BurnDownChartType | KeyIndicatorsType[] | sprintSuccessRateType;
+    data: SprintHealthChartType | BurnDownChartType | KeyIndicatorsType[] | sprintSuccessRateType | BacklogTableType | CircularData | BarData | RingData;
     name: string;
     xAxisTitle: string;
     yAxisTitle: string;
@@ -41,9 +46,10 @@ interface UpdateTaskDuplicateParams {
 
 interface DashboardProps {
     selectedSprint: string[];
+    chartsBase: ChartData[];
 };
 
-const Dashboard = ({ selectedSprint }: DashboardProps) => {
+const Dashboard = ({ selectedSprint, chartsBase }: DashboardProps) => {
     const [isModalContext, setIsModalContext] = useState(false);
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; chartId: string } | null>(null);
     const [contextMenuDaschboard, setContextMenuDaschboard] = useState<{ x: number; y: number; chartId: string } | null>(null);
@@ -54,15 +60,14 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
     const [charts, setCharts] = useState<ChartData[]>([]);
     const [startDate, setStartDate] = useState('')
     const [endDate, setEndDate] = useState('')
-    const { chartsBase } = useStore();
     const { timelineEnd, selectedAreas } = useStore();
 
     async function getToDoTasks(sprintNames: string[]) {
         if (sprintNames) {
             try {
-                const areasStr = selectedAreas.length > 0 
-                ? selectedAreas.map(area => area.label).join('&areas=') 
-                : '';
+                const areasStr = selectedAreas.length > 0
+                    ? selectedAreas.map(area => area.label).join('&areas=')
+                    : '';
                 const response = await axios.get(`http://localhost:8000/get_to_do_tasks?sprint_names=${sprintNames[0]}${areasStr === '' ? '' : '&areas=' + areasStr}`);
                 return response.data;
             } catch (error) {
@@ -92,8 +97,8 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
     async function getInWorkTasks(sprintNames: string[]) {
         if (selectedSprint) {
             try {
-                const areasStr = selectedAreas.length > 0 
-                    ? selectedAreas.map(area => area.label).join('&areas=') 
+                const areasStr = selectedAreas.length > 0
+                    ? selectedAreas.map(area => area.label).join('&areas=')
                     : '';
                 const response = await axios.get(`http://localhost:8000/get_in_work_tasks?sprint_names=${sprintNames[0]}${areasStr === '' ? '' : '&areas=' + areasStr}`);
                 return response.data;
@@ -107,8 +112,8 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
     async function getCloseTasks(sprintNames: string[]) {
         if (sprintNames) {
             try {
-                const areasStr = selectedAreas.length > 0 
-                    ? selectedAreas.map(area => area.label).join('&areas=') 
+                const areasStr = selectedAreas.length > 0
+                    ? selectedAreas.map(area => area.label).join('&areas=')
                     : '';
                 const response = await axios.get(`http://localhost:8000/get_close_tasks?sprint_names=${sprintNames[0]}${areasStr === '' ? '' : '&areas=' + areasStr}`);
                 return response.data;
@@ -122,8 +127,8 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
     async function getCancelTasks(sprintNames: string[]) {
         if (selectedSprint) {
             try {
-                const areasStr = selectedAreas.length > 0 
-                    ? selectedAreas.map(area => area.label).join('&areas=') 
+                const areasStr = selectedAreas.length > 0
+                    ? selectedAreas.map(area => area.label).join('&areas=')
                     : '';
                 const response = await axios.get(`http://localhost:8000/get_cancel_tasks?sprint_names=${sprintNames[0]}${areasStr === '' ? '' : '&areas=' + areasStr}`);
                 return response.data;
@@ -265,6 +270,24 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
         }
     }, [inImplementation, cancel, backlog]);
 
+    const [backlogTable, setBacklogTable] = useState<BacklogTableType>();
+
+    useEffect(() => {
+        const getBacklog = async () => {
+            if (selectedSprint) {
+                try {
+                    const response = await fetch(`http://localhost:8000/backlog_table?sprint_names=${selectedSprint}`);
+                    const data = await response.json();
+                    setBacklogTable(data);
+                    console.log(data);
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        };
+        getBacklog();
+    }, [selectedSprint]);
+
     const fetchChartData = async (sprintNames: string[]) => {
         if (sprintNames) {
             const [toDo, inWork, closed, canceled, backlog] = await Promise.all([
@@ -299,7 +322,7 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
                     xAxisTitle: '',
                     yAxisTitle: '',
                     title: '',
-                    gridPosition: { x: 0, y: 0, w: 6, h: 4 },
+                    gridPosition: { x: 4, y: 11, w: 6, h: 6 },
                 },
                 {
                     id: '2',
@@ -309,7 +332,7 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
                     xAxisTitle: 'Дата',
                     yAxisTitle: 'Оставшаяся работа (часы)',
                     title: 'Диаграмма сгорания',
-                    gridPosition: { x: 6, y: 0, w: 5, h: 8 },
+                    gridPosition: { x: 6, y: 20, w: 5, h: 8 },
                 },
                 {
                     id: '3',
@@ -320,6 +343,16 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
                     yAxisTitle: '',
                     title: 'Оценка здоровья спринта',
                     gridPosition: { x: 0, y: 10, w: 4, h: 6 },
+                },
+                {
+                    id: '4',
+                    type: 'backlogTable',
+                    data: backlogTable!,
+                    name: 'Таблица бэклога',
+                    xAxisTitle: '',
+                    yAxisTitle: '',
+                    title: 'Таблица бэклога',
+                    gridPosition: { x: 0, y: 0, w: 11, h: 4 },
                 }
             ]);
         }
@@ -363,12 +396,106 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
                 const sprintSuccessRate = chart.data as unknown as sprintSuccessRateType;
                 return (
                     <SprintSuccessRate
-                        key={chart.id}  // Используем chart.id как ключ
+                        key={chart.id}
                         data={sprintSuccessRate}
                         sprintName={selectedSprint[0]}
                     />)
+            case 'backlogTable':
+                const backlogTable = chart.data as unknown as BacklogTableType;
+                return (
+                    <BacklogTable
+                        key={chart.id}
+                        backlogTable={backlogTable}
+                        sprintName={selectedSprint[0]}
+                    />)
+            case 'circular':
+                const circularData = chart.data as CircularData;
+                const pieData = Object.keys(circularData).map(key => ({
+                    name: key,
+                    value: circularData[key],
+                }));
+
+                return (
+                    <div className="chart-container">
+                        <h3>{chart.title}</h3>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={pieData}
+                                    dataKey="value"
+                                    nameKey="name"
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius="80%"
+                                    label
+                                >
+                                    {pieData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#8884d8' : '#82ca9d'} />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                );
+
+            case 'ring':
+                const ringData = chart.data as RingData;
+                const ringPieData = Object.keys(ringData).map(key => ({
+                    name: key,
+                    value: ringData[key],
+                }));
+
+                return (
+                    <div className="chart-container">
+                        <h3>{chart.title}</h3>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={ringPieData}
+                                    dataKey="value"
+                                    nameKey="name"
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius="60%"
+                                    outerRadius="80%"
+                                    label
+                                >
+                                    {ringPieData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#8884d8' : '#82ca9d'} />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                );
+
+            case 'bar':
+                const barData = chart.data as BarData;
+                const barChartData = Object.keys(barData).map(key => ({
+                    name: key,
+                    value: barData[key],
+                }));
+                return (
+                    <div className="chart-container">
+                        <h3>{chart.title}</h3>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={barChartData}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis />
+                                <Tooltip />
+                                <Legend />
+                                <Bar dataKey="value" fill="#8884d8" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                );
             default:
-                return chartsBase;
+                return null;
         }
     };
 
@@ -457,6 +584,8 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
         setPasteMenu(null);
     };
 
+    console.log("chartsBase", chartsBase)
+    const allCharts = [...charts, ...chartsBase];
 
     return (
         <div
@@ -470,8 +599,8 @@ const Dashboard = ({ selectedSprint }: DashboardProps) => {
                 setPasteMenu({ x: e.clientX, y: e.clientY });
             }}
         >
-            <GridLayout className="layout dashboard-container" cols={12} rowHeight={40} width={1600} isDraggable={false} isResizable={false}>
-                {charts.map((chart, index) => (
+            <GridLayout className="layout dashboard-container" cols={12} rowHeight={40} width={1600}>
+                {allCharts.map((chart, index) => (
                     <div
                         key={chart.id}
                         id={chart.id}

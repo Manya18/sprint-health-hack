@@ -1,7 +1,6 @@
 .BacklogTable {
     margin: 20px;
     border-collapse: collapse;
-    width: 100%;
     overflow-x: auto;
 }
 
@@ -12,7 +11,8 @@ table {
     overflow: hidden;
 }
 
-th, td {
+th,
+td {
     padding: 10px;
     text-align: center;
     border: 1px solid #ccc;

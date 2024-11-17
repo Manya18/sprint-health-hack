@@ -3,12 +3,17 @@ import { ReactNode, useEffect, useState } from "react";
 import { MultiSelect } from "react-multi-select-component";
 import { exportAllChartsToPDF, exportAllChartsToDOCX, exportAllChartsToPPTX } from "../../logic/exportFunction";
 import { useStore } from "../../logic/useStore";
-import SprintHealthChart from "../charts/sprintHealth/SprintHealthChart";
-import BurnDownChart from "../charts/burnDown/BurnDownChart";
-import CircularChart from "../charts/baseCharts/CircularChart";
-import RingChart from "../charts/baseCharts/RingChart";
-import { BarChart } from "@mui/icons-material";
-import { JSX } from "react/jsx-runtime";
+
+interface ChartData {
+    id: string;
+    type: string;
+    data: any;
+    name: string;
+    xAxisTitle: string;
+    yAxisTitle: string;
+    title: string;
+    gridPosition: { x: number; y: number; w: number; h: number };
+}
 
 type OptionType = {
     value: string;
@@ -17,9 +22,11 @@ type OptionType = {
 
 type ActionBarProps = {
     onSprintChange: (sprint: string[]) => void;
+    setCharts: React.Dispatch<React.SetStateAction<ChartData[]>>;
 };
 
-const ActionBar = ({ onSprintChange }: ActionBarProps) => {
+
+const ActionBar = ({ onSprintChange, setCharts }: ActionBarProps) => {
     const [selectedFormats, setSelectedFormats] = useState<OptionType[]>([]);
     const [selectedSprint, setSelectedSprint] = useState<OptionType[]>([]);
     const [selectedArea, setSelectedArea] = useState<OptionType[]>([]);
@@ -104,40 +111,81 @@ const ActionBar = ({ onSprintChange }: ActionBarProps) => {
     };
 
     const handleAddCharts = () => {
-        const newCharts: ReactNode[] | JSX.Element[] = [];
-        selectedCharts.forEach((chart) => {
+        const newCharts = selectedCharts.map((chart) => {
             switch (chart.value) {
                 case "sprintHealth":
-                    newCharts.push(<SprintHealthChart key="sprintHealth" data={{
-                        toDo: 0,
-                        inProgress: 0,
-                        done: 0,
-                        removed: 0,
-                        backlogChange: 0,
-                        blocked: 0
-                    }} sprintName={""} />);
-                    break;
+                    return {
+                        id: `chart-${Date.now()}`,
+                        type: "sprintHealth",
+                        data: {
+                            toDo: 5,
+                            inProgress: 3,
+                            done: 10,
+                            removed: 1,
+                            backlogChange: 2,
+                            blocked: 0,
+                        },
+                        name: "Здоровье спринта",
+                        xAxisTitle: "",
+                        yAxisTitle: "",
+                        title: "Спринт 1",
+                        gridPosition: { x: 0, y: 0, w: 6, h: 4 },
+                    };
                 case "burnDown":
-                    newCharts.push(<BurnDownChart key="burnDown" data={{
-                        dates: ['1'],
-                        remainingWork: [1]
-                    }} sprintName={""} />);
-                    break;
+                    return {
+                        id: `chart-${Date.now()}`,
+                        type: "burnDown",
+                        data: {
+                            dates: ["2024-11-15", "2024-11-16", "2024-11-17"],
+                            remainingWork: [20, 15, 5],
+                        },
+                        name: "Диаграмма сгорания",
+                        xAxisTitle: "Дата",
+                        yAxisTitle: "Оставшаяся работа (часы)",
+                        title: "Диаграмма сгорания",
+                        gridPosition: { x: 6, y: 0, w: 5, h: 8 },
+                    };
                 case "circular":
-                    newCharts.push(<CircularChart key="circular" data={{}} labels={[]} />);
-                    break;
+                    return {
+                        id: `chart-${Date.now()}`,
+                        type: "circular",
+                        data: { "Выполнено": 40, "Осталось": 30 },
+                        name: "",
+                        xAxisTitle: "",
+                        yAxisTitle: "",
+                        title: "",
+                        gridPosition: { x: 0, y: 10, w: 4, h: 6 },
+                    };
                 case "ring":
-                    newCharts.push(<RingChart key="ring" data={{}} labels={[]} />);
-                    break;
+                    return {
+                        id: `chart-${Date.now()}`,
+                        type: "ring",
+                        data: { "Команда A": 40, "Команда B": 30, "Команда C": 30 },
+                        name: "",
+                        xAxisTitle: "",
+                        yAxisTitle: "",
+                        title: "",
+                        gridPosition: { x: 0, y: 10, w: 4, h: 6 },
+                    };
                 case "bar":
-                    newCharts.push(<BarChart key="bar" />);
-                    break;
+                    return {
+                        id: `chart-${Date.now()}`,
+                        type: "bar",
+                        data: { "Команда A": 40, "Команда B": 30, "Команда C": 30 },
+                        name: "",
+                        xAxisTitle: "",
+                        yAxisTitle: "",
+                        title: "",
+                        gridPosition: { x: 0, y: 10, w: 4, h: 6 },
+                    };
                 default:
-                    break;
+                    return null;
             }
-        });
-        addChart(newCharts); 
+        }).filter(Boolean);
+
+        setCharts((prevCharts: any) => [...prevCharts, ...newCharts]);
     };
+
 
     return (
         <div className={styles.actionBar}>

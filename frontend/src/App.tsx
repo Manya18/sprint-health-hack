@@ -4,10 +4,21 @@ import ActionBar from "./components/actionBar/ActionBar";
 import FilesUpload from "./components/filesUpload/FilesUpload";
 import Dashboard from "./components/dashboard/Dashboard";
 import TimelineSlider from "./components/timelineSlider/TimelineSlider";
-import BacklogTable from "./components/charts/backlogTable/BacklogTable";
+
+interface ChartData {
+  id: string;
+  type: string;
+  data: any;
+  name: string;
+  xAxisTitle: string;
+  yAxisTitle: string;
+  title: string;
+  gridPosition: { x: number; y: number; w: number; h: number };
+}
 
 function App() {
   const [selectedSprints, setSelectedSprints] = useState<string[]>([]);
+  const [charts, setCharts] = useState<ChartData[]>([]);
 
   const handleSprintChange = (sprints: string[]) => {
     setSelectedSprints(sprints);
@@ -17,12 +28,14 @@ function App() {
     <div className="App">
       <h1 className="App-title">SprintHealth</h1>
       <FilesUpload />
-      <ActionBar onSprintChange={handleSprintChange} />
-      {selectedSprints[0] ? (
+      <ActionBar
+        onSprintChange={handleSprintChange}
+        setCharts={setCharts}
+      />
+      {selectedSprints.length > 0 ? (
         <>
           <TimelineSlider sprintNames={selectedSprints} />
-          <Dashboard selectedSprint={selectedSprints} />
-          <BacklogTable sprintName={selectedSprints[0]} />
+          <Dashboard selectedSprint={selectedSprints} chartsBase={charts} />
         </>
       ) : (
         <div className="App-span">Выберите спринт для анализа</div>

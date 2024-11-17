@@ -12,25 +12,8 @@ type BacklogTableType = {
     tasks_removed: BacklogItem[];
 };
 
-const BacklogTable = ({ sprintName, areas }: { sprintName: string; areas?: string[] }) => {
-    const [backlogTable, setBacklogTable] = useState<BacklogTableType>();
-
-    useEffect(() => {
-        const getBacklog = async () => {
-            if (sprintName) {
-                try {
-                    const response = await fetch(`http://localhost:8000/backlog_table?sprint_names=${sprintName}`);
-                    const data = await response.json();
-                    setBacklogTable(data);
-                    console.log(data);
-                } catch (e) {
-                    console.error(e);
-                }
-            }
-        };
-        getBacklog();
-    }, [sprintName]);
-
+const BacklogTable = ({ sprintName, backlogTable }: { sprintName: string; backlogTable: BacklogTableType }) => {
+    console.log(backlogTable)
     return (
         <div className={styles.BacklogTable}>
             <table>
